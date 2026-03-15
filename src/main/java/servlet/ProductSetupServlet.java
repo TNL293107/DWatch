@@ -40,11 +40,19 @@ public class ProductSetupServlet extends HttpServlet {
         }
         String action = req.getParameter("action");
         if ("edit".equals(action)) {
-            int id = Integer.parseInt(req.getParameter("id"));
+            Integer id = parseInteger(req.getParameter("id"));
+            if (id == null || id <= 0) {
+                resp.sendRedirect(req.getContextPath() + "/admin/products?msg=invalid");
+                return;
+            }
             req.setAttribute("editProduct", productDAO.getProductByID(id));
         }
         if ("delete".equals(action)) {
-            int id = Integer.parseInt(req.getParameter("id"));
+            Integer id = parseInteger(req.getParameter("id"));
+            if (id == null || id <= 0) {
+                resp.sendRedirect(req.getContextPath() + "/admin/products?msg=invalid");
+                return;
+            }
             productDAO.deleteProduct(id);
             resp.sendRedirect(req.getContextPath() + "/admin/products?msg=deleted");
             return;
@@ -71,19 +79,32 @@ public class ProductSetupServlet extends HttpServlet {
         Product p = new Product();
         String idParam = req.getParameter("productID");
         if (idParam != null && !idParam.isEmpty()) {
-            p.setProductID(Integer.parseInt(idParam));
+            Integer parsedId = parseInteger(idParam);
+            if (parsedId == null || parsedId <= 0) {
+                resp.sendRedirect(req.getContextPath() + "/admin/products?msg=invalid");
+                return;
+            }
+            p.setProductID(parsedId);
+        }
+
+        Double price = parseDouble(req.getParameter("price"));
+        Integer stock = parseInteger(req.getParameter("stock"));
+        Integer categoryID = parseInteger(req.getParameter("categoryID"));
+        if (price == null || price < 0 || stock == null || stock < 0 || categoryID == null || categoryID <= 0) {
+            resp.sendRedirect(req.getContextPath() + "/admin/products?msg=invalid");
+            return;
         }
 
         p.setProductName(req.getParameter("productName"));
         p.setDescription(req.getParameter("description"));
-        p.setPrice(Double.parseDouble(req.getParameter("price")));
-        p.setStock(Integer.parseInt(req.getParameter("stock")));
+        p.setPrice(price);
+        p.setStock(stock);
         p.setBrand(req.getParameter("brand"));
         p.setOrigin(req.getParameter("origin"));
         p.setWaterResist(req.getParameter("waterResist"));
         p.setCaseSize(req.getParameter("caseSize"));
         p.setMovement(req.getParameter("movement"));
-        p.setCategoryID(Integer.parseInt(req.getParameter("categoryID")));
+        p.setCategoryID(categoryID);
 
         // Handle image URL
         String imageURL = req.getParameter("imageURL");
@@ -108,8 +129,26 @@ public class ProductSetupServlet extends HttpServlet {
     // Helpers
     // ----------------------------------------------------------------
     private boolean isLoggedIn(HttpServletRequest req) {
-    HttpSession session = req.getSession(false);
-    return session != null && Boolean.TRUE.equals(session.getAttribute("adminLoggedIn"));
+        HttpSession session = req.getSession(false);
+        return session != null && Boolean.TRUE.equals(session.getAttribute("adminLoggedIn"));
+    }
+
+    private Integer parseInteger(String value) {
+        if (value == null) return null;
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private Double parseDouble(String value) {
+        if (value == null) return null;
+        try {
+            return Double.parseDouble(value.trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
 }
