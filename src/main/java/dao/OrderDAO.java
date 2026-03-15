@@ -12,34 +12,62 @@ public class OrderDAO {
 
     /**
      * Save full order (header + details) in one transaction.
+     * Tries full schema (PaymentMethod, UserID, PaymentStatus) first; on failure falls back to minimal columns for old DB.
      * Returns the generated OrderID or -1 on failure.
      */
     public int saveOrder(Order order) {
-        String sqlOrder  = "INSERT INTO Orders (FullName, Email, Phone, Address, Note, TotalAmount) "
-                         + "VALUES (?,?,?,?,?,?)";
-        String sqlDetail = "INSERT INTO OrderDetail (OrderID, ProductID, Quantity, UnitPrice) "
-                         + "VALUES (?,?,?,?)";
+        String sqlOrderFull  = "INSERT INTO Orders (FullName, Email, Phone, Address, Note, TotalAmount, PaymentMethod, UserID, PaymentStatus) VALUES (?,?,?,?,?,?,?,?,?)";
+        String sqlOrderNoPay = "INSERT INTO Orders (FullName, Email, Phone, Address, Note, TotalAmount, PaymentMethod, UserID) VALUES (?,?,?,?,?,?,?,?)";
+        String sqlOrderMin   = "INSERT INTO Orders (FullName, Email, Phone, Address, Note, TotalAmount) VALUES (?,?,?,?,?,?)";
+        String sqlDetail     = "INSERT INTO OrderDetail (OrderID, ProductID, Quantity, UnitPrice) VALUES (?,?,?,?)";
         try (Connection cn = DBUtil.getConnection()) {
             cn.setAutoCommit(false);
-
-            // Insert order header
             int generatedID = -1;
-            try (PreparedStatement ps = cn.prepareStatement(sqlOrder, Statement.RETURN_GENERATED_KEYS)) {
+
+            try (PreparedStatement ps = cn.prepareStatement(sqlOrderFull, Statement.RETURN_GENERATED_KEYS)) {
                 ps.setString(1, order.getFullName());
                 ps.setString(2, order.getEmail());
                 ps.setString(3, order.getPhone());
                 ps.setString(4, order.getAddress());
                 ps.setString(5, order.getNote());
                 ps.setDouble(6, order.getTotalAmount());
+                ps.setString(7, order.getPaymentMethod() != null ? order.getPaymentMethod() : Order.PAYMENT_COD);
+                ps.setObject(8, order.getUserID());
+                ps.setString(9, order.getPaymentStatus() != null ? order.getPaymentStatus() : Order.PAYMENT_STATUS_UNPAID);
                 ps.executeUpdate();
-                try (ResultSet keys = ps.getGeneratedKeys()) {
-                    if (keys.next()) generatedID = keys.getInt(1);
+                try (ResultSet keys = ps.getGeneratedKeys()) { if (keys.next()) generatedID = keys.getInt(1); }
+            } catch (SQLException e1) {
+                cn.rollback();
+                cn.setAutoCommit(false);
+                try (PreparedStatement ps = cn.prepareStatement(sqlOrderNoPay, Statement.RETURN_GENERATED_KEYS)) {
+                    ps.setString(1, order.getFullName());
+                    ps.setString(2, order.getEmail());
+                    ps.setString(3, order.getPhone());
+                    ps.setString(4, order.getAddress());
+                    ps.setString(5, order.getNote());
+                    ps.setDouble(6, order.getTotalAmount());
+                    ps.setString(7, order.getPaymentMethod() != null ? order.getPaymentMethod() : Order.PAYMENT_COD);
+                    ps.setObject(8, order.getUserID());
+                    ps.executeUpdate();
+                    try (ResultSet keys = ps.getGeneratedKeys()) { if (keys.next()) generatedID = keys.getInt(1); }
+                } catch (SQLException e2) {
+                    cn.rollback();
+                    cn.setAutoCommit(false);
+                    try (PreparedStatement ps = cn.prepareStatement(sqlOrderMin, Statement.RETURN_GENERATED_KEYS)) {
+                        ps.setString(1, order.getFullName());
+                        ps.setString(2, order.getEmail());
+                        ps.setString(3, order.getPhone());
+                        ps.setString(4, order.getAddress());
+                        ps.setString(5, order.getNote());
+                        ps.setDouble(6, order.getTotalAmount());
+                        ps.executeUpdate();
+                        try (ResultSet keys = ps.getGeneratedKeys()) { if (keys.next()) generatedID = keys.getInt(1); }
+                    } catch (SQLException e3) { e3.printStackTrace(); }
                 }
             }
 
             if (generatedID == -1) { cn.rollback(); return -1; }
 
-            // Insert order details
             try (PreparedStatement ps = cn.prepareStatement(sqlDetail)) {
                 for (OrderDetail d : order.getDetails()) {
                     ps.setInt(1, generatedID);
@@ -78,6 +106,9 @@ public class OrderDAO {
                     o.setTotalAmount(rs.getDouble("TotalAmount"));
                     o.setOrderDate(rs.getDate("OrderDate"));
                     o.setStatus(rs.getString("Status"));
+                    try { o.setPaymentMethod(rs.getString("PaymentMethod")); } catch (SQLException ignored) {}
+                    try { o.setPaymentStatus(rs.getString("PaymentStatus")); } catch (SQLException ignored) {}
+                    try { o.setUserID(rs.getObject("UserID") != null ? rs.getInt("UserID") : null); } catch (SQLException ignored) {}
                     return o;
                 }
             }
@@ -128,6 +159,8 @@ public class OrderDAO {
                     o.setTotalAmount(rs.getDouble("TotalAmount"));
                     o.setOrderDate(rs.getDate("OrderDate"));
                     o.setStatus(rs.getString("Status"));
+                    try { o.setPaymentMethod(rs.getString("PaymentMethod")); } catch (SQLException ignored) {}
+                    try { o.setPaymentStatus(rs.getString("PaymentStatus")); } catch (SQLException ignored) {}
                     list.add(o);
                 }
             }

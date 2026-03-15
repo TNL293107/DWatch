@@ -1,234 +1,227 @@
-# DWatch E-Commerce — Setup Guide
-## Apache NetBeans 25 + Microsoft SQL Server Management Studio 22
+# DWatch — Cửa Hàng Đồng Hồ E-Commerce
+
+**Repository:** [https://github.com/TNL293107/DWatch](https://github.com/TNL293107/DWatch)
+
+Ứng dụng web bán đồng hồ xây bằng **Java (Servlet/JSP)**, **Maven**, **Microsoft SQL Server**. Hỗ trợ đăng ký/đăng nhập, giỏ hàng, đặt hàng (COD / VietQR), quên mật khẩu, tra cứu đơn hàng, so sánh sản phẩm, quản trị sản phẩm.
 
 ---
 
-## Project Structure
+## Công nghệ
+
+- **Backend:** Java 17, Servlet 4.0, JSP, JSTL  
+- **Build:** Maven 3.x  
+- **Database:** Microsoft SQL Server  
+- **Deploy:** WAR → Apache Tomcat 9/10  
+- **Email:** Apache Commons Email (Gmail SMTP) — xác nhận đơn hàng, đặt lại mật khẩu  
+
+---
+
+## Cấu trúc project (Maven)
 
 ```
-DWatchProject/
-├── src/java/
-│   ├── dao/
-│   │   ├── CategoryDAO.java
-│   │   ├── OrderDAO.java
-│   │   └── ProductDAO.java
-│   ├── model/
-│   │   ├── CartItem.java
-│   │   ├── Category.java
-│   │   ├── Order.java
-│   │   ├── OrderDetail.java
-│   │   └── Product.java
-│   ├── servlet/
-│   │   ├── AdminLoginServlet.java
-│   │   ├── CartServlet.java
-│   │   ├── CharsetFilter.java
-│   │   ├── HomeServlet.java
-│   │   ├── OrderConfirmServlet.java
-│   │   ├── ProductDetailServlet.java
-│   │   └── ProductSetupServlet.java
-│   └── util/
-│       └── DBUtil.java
-└── web/
-    ├── WEB-INF/
-    │   └── web.xml
-    ├── css/
-    │   ├── admin.css
-    │   └── style.css
-    ├── images/          ← put product images here
-    ├── js/
-    │   └── script.js
-    ├── pages/
-    │   ├── adminLogin.jsp
-    │   ├── cart.jsp
-    │   ├── footer.jsp
-    │   ├── header.jsp
-    │   ├── home.jsp
-    │   ├── orderConfirm.jsp
-    │   ├── productDetail.jsp
-    │   └── productSetup.jsp
-    └── index.jsp
+DWatch/
+├── pom.xml
+├── .env.example          ← copy thành .env, điền DB + (tùy chọn) email
+├── database.sql          ← script tạo DB và bảng chính
+├── database_add_payment_method.sql
+├── database_password_reset.sql
+├── README.md
+└── src/main/
+    ├── java/
+    │   ├── dao/
+    │   │   ├── CategoryDAO.java
+    │   │   ├── OrderDAO.java
+    │   │   ├── ProductDAO.java
+    │   │   ├── UserDAO.java
+    │   │   └── WishlistDAO.java
+    │   ├── model/
+    │   │   ├── CartItem.java
+    │   │   ├── Category.java
+    │   │   ├── Order.java
+    │   │   ├── OrderDetail.java
+    │   │   ├── Product.java
+    │   │   └── User.java
+    │   ├── servlet/
+    │   │   ├── AdminLoginServlet.java
+    │   │   ├── CartServlet.java
+    │   │   ├── CharsetFilter.java
+    │   │   ├── CompareServlet.java
+    │   │   ├── ForgotPasswordServlet.java
+    │   │   ├── HomeServlet.java
+    │   │   ├── OrderConfirmServlet.java
+    │   │   ├── OrderHistoryServlet.java
+    │   │   ├── OrderLookupServlet.java
+    │   │   ├── ProductDetailServlet.java
+    │   │   ├── ProductSetupServlet.java
+    │   │   ├── ResetPasswordServlet.java
+    │   │   ├── UserServlet.java
+    │   │   └── WishlistServlet.java
+    │   └── util/
+    │       ├── DBUtil.java
+    │       ├── EmailUtil.java
+    │       └── VietQRUtil.java          ← tạo mã QR thanh toán (VietQR)
+    └── webapp/
+        ├── WEB-INF/
+        │   └── web.xml                  ← context-param VietQR (số TK, tên NH)
+        ├── css/
+        │   ├── admin.css
+        │   └── style.css
+        ├── images/
+        ├── pages/
+        │   ├── adminLogin.jsp
+        │   ├── cart.jsp
+        │   ├── compare.jsp
+        │   ├── footer.jsp
+        │   ├── forgotPassword.jsp
+        │   ├── header.jsp
+        │   ├── home.jsp
+        │   ├── login.jsp
+        │   ├── orderConfirm.jsp
+        │   ├── orderDetail.jsp
+        │   ├── orderHistory.jsp
+        │   ├── orderLookup.jsp
+        │   ├── orderLookupResult.jsp
+        │   ├── productDetail.jsp
+        │   ├── productSetup.jsp
+        │   ├── profile.jsp
+        │   ├── register.jsp
+        │   ├── resetPassword.jsp
+        │   └── wishlist.jsp
+        └── index.jsp
 ```
 
 ---
 
-## Step 1 — Set Up the Database
+## Chức năng chính
 
-1. Open **SQL Server Management Studio 22**
-2. Connect to your local SQL Server instance
-3. Open `database.sql` from this project
-4. Execute the entire script (**F5** or Run)
-5. This creates: `DWatchDB` database with all tables and 10 sample watches
-
----
-
-## Step 2 — Create Project in NetBeans 25
-
-1. **File → New Project → Java with Ant → Java Web → Web Application**
-2. Name: `DWatchProject`
-3. Server: **Apache Tomcat** (add if not already added)
-4. Java EE Version: **Java EE 8** (Web Profile)
-5. Click **Finish**
-
----
-
-## Step 3 — Copy Source Files
-
-Copy files into the NetBeans project:
-- All `.java` files → `src/java/` (maintain package folder structure)
-- All `.jsp`, `.css`, `.js` files → `web/` (maintain folder structure)
-- Replace `web/WEB-INF/web.xml` with the provided one
+| Chức năng | Mô tả |
+|-----------|--------|
+| **Trang chủ** | Danh sách sản phẩm, tìm kiếm, lọc theo danh mục |
+| **Chi tiết sản phẩm** | Ảnh, mô tả, thông số, thêm giỏ, yêu thích, **thêm vào so sánh** |
+| **Giỏ hàng** | Sửa/xóa số lượng, cập nhật giỏ; **checkout bắt buộc đăng nhập** (hoặc tạo tài khoản) |
+| **Thanh toán** | **COD** (thanh toán khi nhận hàng) hoặc **VietQR** (mã QR đúng số tiền, chuẩn VietQR) |
+| **Tình trạng đơn** | **Đã thanh toán / Chưa thanh toán** — hiển thị trong email xác nhận và trang đơn hàng |
+| **Đăng ký / Đăng nhập** | Session user; redirect về giỏ hàng sau khi đăng nhập nếu đang checkout |
+| **Quên mật khẩu** | Nhập email → gửi link đặt lại mật khẩu (hiệu lực 1 giờ) qua email |
+| **Tra cứu đơn hàng** | **Không cần đăng nhập**: nhập Mã đơn + SĐT hoặc Email → xem trạng thái và chi tiết đơn |
+| **So sánh sản phẩm** | Chọn tối đa 3 sản phẩm từ trang chi tiết → bảng so sánh (giá, thương hiệu, xuất xứ, kích thước, bộ máy, kháng nước...) |
+| **Lịch sử đơn hàng** | Xem danh sách đơn và chi tiết (chỉ user đã đăng nhập) |
+| **Yêu thích (Wishlist)** | Thêm/bỏ sản phẩm yêu thích (cần đăng nhập) |
+| **Email** | Xác nhận đơn hàng + tình trạng thanh toán; email đặt lại mật khẩu |
+| **Admin** | Đăng nhập admin, CRUD sản phẩm (kèm ảnh) |
 
 ---
 
-## Step 4 — Add Required Libraries (JARs)
+## Trang & URL
 
-Right-click project → **Properties → Libraries → Add JAR/Folder**
-
-Add these JARs to the project classpath:
-
-### A. MSSQL JDBC Driver
-Download from: https://docs.microsoft.com/en-us/sql/connect/jdbc/download-microsoft-jdbc-driver-for-sql-server
-- File: `mssql-jdbc-12.x.x.jre11.jar`
-- Add to: Project Libraries
-
-### B. JSTL (JSP Standard Tag Library)
-Download: `javax.servlet.jsp.jstl-1.2.x.jar` and `javax.servlet.jsp.jstl-api-1.2.x.jar`
-OR add via Maven dependencies, or download from Apache Taglibs.
-- Add to: Project Libraries (and also copy to `web/WEB-INF/lib/`)
-
-### In NetBeans, also ensure:
-- Right-click **Libraries → Add Library** → add **"Java EE 8 API Library"** if available
-
----
-
-## Step 5 — Configure Database Connection
-
-Credentials are read from a **`.env`** file (or environment variables), so you never put your password in code.
-
-1. Copy the example file: **`.env.example`** → **`.env`** (same folder, next to `pom.xml`).
-2. Open **`.env`** and set your SQL Server values:
-   - `DB_SERVER` — host (e.g. `localhost`)
-   - `DB_PORT` — port (default `1433`)
-   - `DB_NAME` — database name (e.g. `DWatchDB`)
-   - `DB_USER` — SQL login (e.g. `sa`)
-   - `DB_PASSWORD` — your password
-
-File **`.env`** is ignored by Git and will not be pushed to GitHub.
-
-> **Chạy bằng Tomcat (WAR):** Ứng dụng đọc `.env` theo thư mục hiện tại. Khi deploy WAR, hãy đặt **biến môi trường** `DB_SERVER`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` cho process Tomcat (hoặc đặt `.env` ở thư mục gốc Tomcat rồi khởi động Tomcat từ đó).  
-> **Alternative:** Dùng biến môi trường thay cho `.env`.  
-> **Windows Authentication:** `DBUtil` đang dùng SQL login. Dùng integrated security thì cần sửa URL trong code và `sqljdbc_auth.dll`.
+| Trang | URL | Mô tả |
+|-------|-----|--------|
+| Trang chủ | `/home` | Sản phẩm, tìm kiếm, lọc danh mục |
+| Tìm kiếm | `/home?keyword=casio` | Theo tên/mô tả/thương hiệu |
+| Lọc danh mục | `/home?cat=1` | 1=Nam, 2=Nữ, 3=Đôi, 4=Smartwatch |
+| Chi tiết sản phẩm | `/product?id=1` | Thông tin, thêm giỏ, yêu thích, so sánh |
+| Giỏ hàng | `/cart` | Xem/sửa giỏ; form đặt hàng (cần đăng nhập) |
+| Xác nhận đơn | `/orderConfirm?id=1` | Sau khi đặt hàng; hiện VietQR nếu chọn thanh toán QR |
+| Đăng nhập | `/login` | Có link "Quên mật khẩu?" |
+| Đăng ký | `/register` | Tạo tài khoản |
+| Quên mật khẩu | `/forgotPassword` | Gửi link đặt lại mật khẩu |
+| Đặt lại mật khẩu | `/resetPassword?token=xxx` | Form đổi mật khẩu (từ link email) |
+| Tra cứu đơn | `/orderLookup` | Mã đơn + SĐT/Email, không cần đăng nhập |
+| So sánh sản phẩm | `/compare` | Danh sách so sánh (tối đa 3); `?add=id` / `?remove=id` |
+| Lịch sử đơn | `/orders` | Danh sách đơn (cần đăng nhập) |
+| Chi tiết đơn | `/orders?id=1` | Chi tiết đơn (cần đăng nhập) |
+| Yêu thích | `/wishlist` | Sản phẩm đã thích (cần đăng nhập) |
+| Cá nhân | `/profile` | Sửa thông tin, đổi mật khẩu (cần đăng nhập) |
+| Admin đăng nhập | `/admin/login` | **admin** / **admin123** |
+| Admin sản phẩm | `/admin/products` | Thêm/sửa/xóa sản phẩm |
 
 ---
 
-## Step 6 — Enable TCP/IP in SQL Server
+## Cài đặt & Chạy
 
-1. Open **SQL Server Configuration Manager**
-2. Expand **SQL Server Network Configuration → Protocols for SQLEXPRESS** (or MSSQLSERVER)
-3. Enable **TCP/IP**
-4. Right-click TCP/IP → Properties → **IP Addresses** tab
-5. Scroll to **IPAll** → set **TCP Port = 1433**
-6. Restart **SQL Server service**
+### 1. Cấu hình database
 
----
+1. Mở **SQL Server Management Studio**, kết nối tới SQL Server.
+2. Chạy lần lượt:
+   - **`database.sql`** — tạo database `DWatchDB`, bảng, dữ liệu mẫu.
+   - **`database_add_payment_method.sql`** — nếu bảng `Orders` đã tồn tại nhưng chưa có cột `PaymentMethod`, `PaymentStatus`.
+   - **`database_password_reset.sql`** — tạo bảng `PasswordResetToken` (cho chức năng quên mật khẩu).
 
-## Step 7 — Add Product Images
+### 2. Cấu hình kết nối DB và (tùy chọn) Email
 
-Place JPEG/PNG images in: `web/images/`
+1. Copy **`.env.example`** thành **`.env`** (cùng thư mục với `pom.xml`).
+2. Trong **`.env`** điền:
+   - `DB_SERVER`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` (bắt buộc).
+   - Để gửi email (xác nhận đơn, quên mật khẩu): cấu hình Gmail trong `EmailUtil.java` (FROM_EMAIL, APP_PASSWORD) hoặc dùng biến môi trường nếu bạn đã chỉnh code đọc từ env.
 
-Default filenames expected:
-- `p1.jpg` through `p10.jpg` (for the 10 seeded products)
-- `default.jpg` (fallback for missing images)
+File **`.env`** nằm trong `.gitignore`, không bị đẩy lên Git.
 
-You can use any watch images downloaded from Google Images or use placeholder images.
+### 3. Cấu hình VietQR (thanh toán QR)
 
----
+Trong **`src/main/webapp/WEB-INF/web.xml`** có 3 context-param:
 
-## Step 8 — Run the Project
+- **`vietqr_acq_id`** — Mã ngân hàng/SWIFT BANK CODE (6 số, VD: `970422` MB) hoặc tên ngắn (VD: `Vietinbank`).
+- **`vietqr_account_no`** — Số tài khoản nhận tiền (của bạn).
+- **`vietqr_account_name`** — Tên chủ tài khoản (nên không dấu).
 
-1. Right-click project → **Run** (or Shift+F6)
-2. NetBeans will deploy to Tomcat and open the browser
-3. Default URL: `http://localhost:8080/DWatchProject/`
+Thay bằng **số tài khoản thật** của bạn để mã QR quét được và chuyển khoản thành công.
 
----
+### 4. Bật TCP/IP cho SQL Server
 
-## Pages & URLs
+- **SQL Server Configuration Manager** → Protocols → **TCP/IP** = Enabled, port **1433** → Restart SQL Server.
 
-| Page | URL | Description |
-|------|-----|-------------|
-| Home / Product List | `/home` | Shows all products sorted by price ↑ |
-| Search | `/home?keyword=casio` | Search by name/description |
-| Category Filter | `/home?cat=1` | Filter by category |
-| Product Detail | `/product?id=1` | Product info + Add to Cart |
-| Shopping Cart | `/cart` | View, edit, delete cart items |
-| Order Confirmation | `/orderConfirm?id=1` | After successful checkout |
-| Admin Login | `/admin/login` | Login: **admin** / **admin123** |
-| Admin Products | `/admin/products` | Add / edit / delete products |
-
----
-
-## Assignment Requirements Mapping
-
-| Requirement | Implementation |
-|-------------|---------------|
-| **1. Setup products** | `/admin/products` — full CRUD with image upload |
-| **2. Home page** — list sorted by price, search | `HomeServlet` → `home.jsp` |
-| **3. Product details** — picture, info, Add to Cart | `ProductDetailServlet` → `productDetail.jsp` |
-| **4. Shopping cart** — add/remove/change qty, delivery form, save order | `CartServlet` → `cart.jsp` |
-
----
-
-## Troubleshooting
-
-| Problem | Solution |
-|---------|----------|
-| `ClassNotFoundException: SQLServerDriver` | Add MSSQL JDBC JAR to project libs AND `WEB-INF/lib/` |
-| `SQLException: Connection refused` | Enable TCP/IP in SQL Config Manager, check port 1433 |
-| `javax.el.PropertyNotFoundException` | Ensure JSTL JARs are in `WEB-INF/lib/` |
-| Vietnamese text shows `?????` | Confirm DB collation is `Vietnamese_CI_AS` or `SQL_Latin1_General_CP1_CI_AS`; check CharsetFilter |
-| Images not showing | Put `.jpg` files in `web/images/`, rebuild project |
-
----
-
-## Push code lên GitHub (cho chủ repo)
-
-### 1. Tạo repository trên GitHub
-
-- Vào [github.com](https://github.com) → **New repository**
-- Đặt tên (ví dụ: `DWatch`), không cần tích "Initialize with README" nếu đã có code local
-- Ghi lại URL repo (ví dụ: `https://github.com/<username>/DWatch.git`)
-
-### 2. Khởi tạo Git và push
-
-Trong thư mục gốc của project (chứa `pom.xml`), chạy:
+### 5. Build và chạy
 
 ```bash
-cd "c:\Users\long2\Downloads\DWatch\DWatch"   # hoặc đường dẫn tới thư mục DWatch của bạn
-git init
-git add .
-git commit -m "Initial commit: DWatch e-commerce project"
-git branch -M main
-git remote add origin https://github.com/<username>/<tên-repo>.git
-git push -u origin main
+cd DWatch    # thư mục chứa pom.xml
+mvn clean package
 ```
 
-Thay `<username>` và `<tên-repo>` bằng tên GitHub và tên repo của bạn.
+- File WAR: **`target/DWatch.war`**.
+- Copy vào **`webapps`** của Tomcat, khởi động Tomcat.
+- Mở trình duyệt: **`http://localhost:8080/DWatch/`**
 
-### 3. Lưu ý bảo mật
-
-- Mật khẩu DB đọc từ file **`.env`** (hoặc biến môi trường). File `.env` đã được đưa vào `.gitignore` nên sẽ **không** bị push lên GitHub. Người clone chỉ cần tạo `.env` từ `.env.example` và điền thông tin của họ.
+**Yêu cầu:** JDK 17, Maven 3.6+, Tomcat 9/10, SQL Server.
 
 ---
 
-## Cách tải và chạy (cho người clone từ GitHub)
+### Lưu ý bảo mật khi commit/push:
 
-1. **Clone:**  
-   `git clone https://github.com/<username>/<tên-repo>.git` → `cd <tên-repo>`
-2. **Cấu hình DB:** Copy `.env.example` thành `.env`, mở `.env` và điền `DB_SERVER`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` (xem **Step 5** ở trên).
-3. **Chạy script database:** Mở `database.sql` trong SQL Server Management Studio và thực thi (xem **Step 1**).
-4. **Build:** Trong thư mục project (có `pom.xml`):  
-   `mvn clean package`  
-   → File `target/DWatch.war` sẽ được tạo.
-5. **Chạy:** Copy `DWatch.war` vào thư mục `webapps` của Tomcat, khởi động Tomcat, mở trình duyệt: `http://localhost:8080/DWatch/`
+- **`.env`** đã nên có trong **`.gitignore`** → không bị push (mật khẩu DB, biến môi trường).
+- **`web.xml`** có thể chứa thông tin VietQR (số tài khoản mẫu); nếu dùng tài khoản thật, nên dùng biến môi trường hoặc file cấu hình ngoài, không commit tài khoản thật lên GitHub.
 
-**Yêu cầu:** JDK 17, Maven 3.6+, Tomcat 9/10, SQL Server.
+---
+
+## Hướng dẫn cách clone và chạy:
+```bash
+git clone https://github.com/TNL293107/DWatch.git
+cd DWatch
+```
+
+Sau đó:
+
+1. Tạo **`.env`** từ **`.env.example`**, điền `DB_SERVER`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`.
+2. Chạy **`database.sql`**, **`database_add_payment_method.sql`**, **`database_password_reset.sql`** trong SQL Server.
+3. (Tùy chọn) Sửa **`web.xml`** — VietQR: `vietqr_acq_id`, `vietqr_account_no`, `vietqr_account_name`.
+4. Build: **`mvn clean package`** → deploy **`target/DWatch.war`** lên Tomcat.
+5. Mở: **`http://localhost:8080/DWatch/`**
+
+---
+
+## Xử lý lỗi thường gặp
+
+| Vấn đề | Gợi ý xử lý |
+|--------|--------------|
+| `ClassNotFoundException: SQLServerDriver` | Thêm MSSQL JDBC JAR vào dependency (Maven) hoặc `WEB-INF/lib/` |
+| `SQLException: Connection refused` | Bật TCP/IP, port 1433; kiểm tra `.env` (DB_SERVER, DB_PORT) |
+| `javax.el.PropertyNotFoundException` | Đảm bảo JSTL đã khai báo trong `pom.xml` và có trong WAR |
+| Chữ tiếng Việt hiển thị sai | Kiểm tra collation DB (VD: `Vietnamese_CI_AS`), CharsetFilter UTF-8 |
+| Quên mật khẩu báo lỗi DB | Chạy **`database_password_reset.sql`** để tạo bảng `PasswordResetToken` |
+| Đặt hàng thất bại (lỗi cột) | Chạy **`database_add_payment_method.sql`** để thêm cột vào `Orders` |
+| Quét QR báo "tài khoản đã đóng" | Đổi `vietqr_*` trong `web.xml` sang **số tài khoản và ngân hàng thật** của bạn |
+
+---
+
+## Liên kết
+
+- **GitHub:** [https://github.com/TNL293107/DWatch](https://github.com/TNL293107/DWatch)

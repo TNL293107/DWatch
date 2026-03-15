@@ -7,6 +7,23 @@
 
     <display-name>DWatch E-Commerce</display-name>
 
+    <!-- VietQR: 3 tham số tạo mã QR. param-name phải đúng để code đọc được. -->
+    <!-- (1) vietqr_acq_id = Mã ngân hàng: 6 số (VD 970422=MB) hoặc tên ngắn (MB, Vietinbank). -->
+    <context-param>
+        <param-name>vietqr_acq_id</param-name>
+        <param-value>970422</param-value>
+    </context-param>
+    <!-- (2) vietqr_account_no = Số tài khoản nhận tiền (6–19 chữ số). -->
+    <context-param>
+        <param-name>vietqr_account_no</param-name>
+        <param-value>0774111206</param-value>
+    </context-param>
+    <!-- (3) vietqr_account_name = Tên chủ tài khoản in trên sổ (nên không dấu). -->
+    <context-param>
+        <param-name>vietqr_account_name</param-name>
+        <param-value>TRAN NHAT LONG - CONG TY DWATCH</param-value>
+    </context-param>
+
     <!-- Default welcome page -->
     <welcome-file-list>
         <welcome-file>index.jsp</welcome-file>

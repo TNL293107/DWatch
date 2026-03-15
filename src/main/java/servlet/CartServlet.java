@@ -6,6 +6,7 @@ import model.CartItem;
 import model.Order;
 import model.OrderDetail;
 import model.Product;
+import model.User;
 
 import javax.servlet.*;
 import javax.servlet.annotation.WebServlet;
@@ -33,11 +34,15 @@ public class CartServlet extends HttpServlet {
     private final OrderDAO   orderDAO   = new OrderDAO();
 
     // ----------------------------------------------------------------
-    // GET  → view cart
+    // GET  → view cart or remove item (action=remove)
     // ----------------------------------------------------------------
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
+        if ("remove".equals(req.getParameter("action"))) {
+            doRemove(req, resp);
+            return;
+        }
         showCart(req, resp);
     }
 
@@ -106,11 +111,15 @@ public class CartServlet extends HttpServlet {
         String[] productIDs = req.getParameterValues("productID");
         String[] quantities = req.getParameterValues("qty");
 
-        if (productIDs != null && quantities != null) {
+        if (productIDs != null && quantities != null && productIDs.length == quantities.length) {
             for (int i = 0; i < productIDs.length; i++) {
-                int pid = Integer.parseInt(productIDs[i]);
-                int q   = 0;
-                try { q = Integer.parseInt(quantities[i]); } catch (Exception ignored) {}
+                String qtyStr = quantities[i];
+                if (qtyStr == null || qtyStr.trim().isEmpty()) continue;
+                int pid, q;
+                try {
+                    pid = Integer.parseInt(productIDs[i].trim());
+                    q  = Integer.parseInt(qtyStr.trim());
+                } catch (NumberFormatException ignored) { continue; }
                 if (q <= 0) {
                     cart.remove(pid);
                 } else if (cart.containsKey(pid)) {
@@ -123,10 +132,17 @@ public class CartServlet extends HttpServlet {
     }
 
     // ----------------------------------------------------------------
-    // CHECKOUT  — save to DB then clear cart
+    // CHECKOUT  — requires login; save to DB then clear cart
     // ----------------------------------------------------------------
     private void doCheckout(HttpServletRequest req, HttpServletResponse resp)
             throws IOException, ServletException {
+
+        User loggedUser = (User) req.getSession().getAttribute("loggedUser");
+        if (loggedUser == null) {
+            resp.sendRedirect(req.getContextPath() + "/login?redirect=" +
+                    java.net.URLEncoder.encode(req.getContextPath() + "/cart", "UTF-8"));
+            return;
+        }
 
         Map<Integer, CartItem> cart = getCart(req);
         if (cart.isEmpty()) {
@@ -134,13 +150,20 @@ public class CartServlet extends HttpServlet {
             return;
         }
 
-        // Build order object
+        String paymentMethod = req.getParameter("paymentMethod");
+        if (paymentMethod == null || (!Order.PAYMENT_COD.equals(paymentMethod) && !Order.PAYMENT_QR.equals(paymentMethod)))
+            paymentMethod = Order.PAYMENT_COD;
+
+        // Build order from logged user (form can override)
         Order order = new Order();
-        order.setFullName(req.getParameter("fullName"));
-        order.setEmail(req.getParameter("email"));
-        order.setPhone(req.getParameter("phone"));
-        order.setAddress(req.getParameter("address"));
+        order.setFullName(req.getParameter("fullName") != null ? req.getParameter("fullName").trim() : loggedUser.getFullName());
+        order.setEmail(req.getParameter("email") != null ? req.getParameter("email").trim() : loggedUser.getEmail());
+        order.setPhone(req.getParameter("phone") != null ? req.getParameter("phone").trim() : loggedUser.getPhone());
+        order.setAddress(req.getParameter("address") != null ? req.getParameter("address").trim() : loggedUser.getAddress());
         order.setNote(req.getParameter("note"));
+        order.setPaymentMethod(paymentMethod);
+        order.setPaymentStatus(Order.PAYMENT_STATUS_UNPAID); // Mới tạo đơn = Chưa thanh toán
+        order.setUserID(loggedUser.getUserID());
 
         // Calculate total & build details + HTML cho email
         double total = 0;
@@ -169,13 +192,15 @@ public class CartServlet extends HttpServlet {
             // Gửi email xác nhận nếu khách có nhập email
             String customerEmail = order.getEmail();
             if (customerEmail != null && !customerEmail.trim().isEmpty()) {
+                String paymentStatus = order.getPaymentStatus() != null ? order.getPaymentStatus() : Order.PAYMENT_STATUS_UNPAID;
                 util.EmailUtil.sendOrderConfirmation(
                     customerEmail.trim(),
                     order.getFullName(),
                     orderID,
                     total,
                     order.getAddress(),
-                    itemsHTML.toString()
+                    itemsHTML.toString(),
+                    paymentStatus
                 );
             }
             // Clear cart from session
@@ -193,6 +218,7 @@ public class CartServlet extends HttpServlet {
     private void showCart(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
         req.setAttribute("cart", getCart(req));
+        req.setAttribute("loggedUser", req.getSession().getAttribute("loggedUser"));
         req.getRequestDispatcher("/pages/cart.jsp").forward(req, resp);
     }
 

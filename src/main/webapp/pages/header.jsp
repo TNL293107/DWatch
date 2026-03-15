@@ -69,6 +69,8 @@
             <a href="${pageContext.request.contextPath}/home?cat=2" class="nav-link">Đồng Hồ Nữ</a>
             <a href="${pageContext.request.contextPath}/home?cat=3" class="nav-link">Đồng Hồ Đôi</a>
             <a href="${pageContext.request.contextPath}/home?cat=4" class="nav-link">Smartwatch</a>
+            <a href="${pageContext.request.contextPath}/orderLookup" class="nav-link">🔍 Tra cứu đơn</a>
+            <a href="${pageContext.request.contextPath}/compare" class="nav-link">⚖ So sánh</a>
             <a href="${pageContext.request.contextPath}/admin/login" class="nav-link nav-admin">⚙ Admin</a>
         </div>
     </nav>

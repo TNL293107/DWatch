@@ -4,6 +4,12 @@ import java.util.Date;
 import java.util.List;
 
 public class Order {
+    public static final String PAYMENT_COD = "COD";
+    public static final String PAYMENT_QR = "QR";
+    /** Tình trạng thanh toán: hiển thị trong email và trang đơn hàng */
+    public static final String PAYMENT_STATUS_PAID   = "Đã thanh toán";
+    public static final String PAYMENT_STATUS_UNPAID = "Chưa thanh toán";
+
     private int    orderID;
     private String fullName;
     private String email;
@@ -13,6 +19,9 @@ public class Order {
     private double totalAmount;
     private Date   orderDate;
     private String status;
+    private String paymentMethod;   // COD, QR
+    private String paymentStatus;   // Đã thanh toán / Chưa thanh toán
+    private Integer userID;
     private List<OrderDetail> details;
 
     public Order() {}
@@ -44,6 +53,15 @@ public class Order {
 
     public String getStatus()       { return status; }
     public void   setStatus(String v) { status = v; }
+
+    public String  getPaymentMethod() { return paymentMethod; }
+    public void    setPaymentMethod(String v) { paymentMethod = v; }
+
+    public String  getPaymentStatus() { return paymentStatus; }
+    public void    setPaymentStatus(String v) { paymentStatus = v; }
+
+    public Integer getUserID()       { return userID; }
+    public void    setUserID(Integer v) { userID = v; }
 
     public List<OrderDetail> getDetails() { return details; }
     public void setDetails(List<OrderDetail> v) { details = v; }

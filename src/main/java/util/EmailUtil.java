@@ -11,7 +11,8 @@ public class EmailUtil {
 
     public static void sendOrderConfirmation(String toEmail, String customerName,
                                              int orderID, double total,
-                                             String address, String itemsHTML) {
+                                             String address, String itemsHTML,
+                                             String paymentStatus) {
         try {
             HtmlEmail email = new HtmlEmail();
             email.setHostName("smtp.gmail.com");
@@ -22,7 +23,7 @@ public class EmailUtil {
             email.setSubject("DWatch - Xác nhận đơn hàng #" + orderID);
             email.addTo(toEmail, customerName);
             email.setCharset("UTF-8");
-            email.setHtmlMsg(buildEmailBody(customerName, orderID, total, address, itemsHTML));
+            email.setHtmlMsg(buildEmailBody(customerName, orderID, total, address, itemsHTML, paymentStatus));
             email.send();
             System.out.println("✔ Email đã gửi tới: " + toEmail);
         } catch (Exception e) {
@@ -32,7 +33,8 @@ public class EmailUtil {
     }
 
     private static String buildEmailBody(String name, int orderID,
-                                         double total, String address, String itemsHTML) {
+                                         double total, String address, String itemsHTML, String paymentStatus) {
+        String statusText = (paymentStatus != null && !paymentStatus.isEmpty()) ? paymentStatus : "Chưa thanh toán";
         return String.format("""
             <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;
                         border:1px solid #ddd;border-radius:8px;overflow:hidden">
@@ -43,6 +45,7 @@ public class EmailUtil {
               <div style="padding:24px">
                 <p>Xin chào <strong>%s</strong>,</p>
                 <p>Đơn hàng <strong>#%d</strong> của bạn đã được xác nhận thành công.</p>
+                <p><strong>Tình trạng đơn hàng:</strong> <span style="color:#c9a84c;font-weight:bold">%s</span></p>
                 <table style="width:100%%;border-collapse:collapse;margin:16px 0">
                   <thead>
                     <tr style="background:#f5f5f5">
@@ -65,6 +68,38 @@ public class EmailUtil {
                 <p style="color:#888;margin:0;font-size:13px">© 2025 DWatch — Đồng Hồ Chính Hãng</p>
               </div>
             </div>
-            """, name, orderID, itemsHTML, total, address);
+            """, name, orderID, statusText, itemsHTML, total, address);
+    }
+
+    /** Gửi email chứa link đặt lại mật khẩu (quên mật khẩu) */
+    public static void sendPasswordResetEmail(String toEmail, String customerName, String resetLink) {
+        try {
+            HtmlEmail email = new HtmlEmail();
+            email.setHostName("smtp.gmail.com");
+            email.setSmtpPort(587);
+            email.setAuthenticator(new DefaultAuthenticator(FROM_EMAIL, APP_PASSWORD));
+            email.setStartTLSEnabled(true);
+            email.setFrom(FROM_EMAIL, FROM_NAME);
+            email.setSubject("DWatch - Đặt lại mật khẩu");
+            email.addTo(toEmail, customerName);
+            email.setCharset("UTF-8");
+            String body = String.format("""
+                <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:24px">
+                  <h2 style="color:#1a1a1a">Đặt lại mật khẩu</h2>
+                  <p>Xin chào <strong>%s</strong>,</p>
+                  <p>Bạn đã yêu cầu đặt lại mật khẩu. Nhấn vào link bên dưới (link có hiệu lực 1 giờ):</p>
+                  <p style="margin:24px 0"><a href="%s" style="background:#c9a84c;color:#fff;padding:12px 24px;text-decoration:none;border-radius:4px;display:inline-block">Đặt lại mật khẩu</a></p>
+                  <p style="color:#666;font-size:13px">Nếu bạn không yêu cầu, hãy bỏ qua email này.</p>
+                  <hr style="margin:24px 0">
+                  <p style="color:#888;font-size:12px">© 2025 DWatch</p>
+                </div>
+                """, customerName, resetLink);
+            email.setHtmlMsg(body);
+            email.send();
+            System.out.println("✔ Email đặt lại mật khẩu đã gửi tới: " + toEmail);
+        } catch (Exception e) {
+            System.err.println("✘ Lỗi gửi email đặt lại mật khẩu: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 }

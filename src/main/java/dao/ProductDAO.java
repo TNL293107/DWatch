@@ -318,6 +318,25 @@ public class ProductDAO {
         return null;
     }
 
+    /** Lấy nhiều sản phẩm theo danh sách ID (cho trang so sánh) */
+    public List<Product> getProductsByIDs(List<Integer> ids) {
+        if (ids == null || ids.isEmpty()) return new ArrayList<>();
+        List<Product> list = new ArrayList<>();
+        String sql = "SELECT p.*, c.CategoryName FROM Product p "
+                   + "LEFT JOIN Category c ON p.CategoryID = c.CategoryID "
+                   + "WHERE p.ProductID = ? AND (p.IsActive = 1 OR p.IsActive IS NULL)";
+        try (Connection cn = DBUtil.getConnection();
+             PreparedStatement ps = cn.prepareStatement(sql)) {
+            for (Integer id : ids) {
+                ps.setInt(1, id);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) list.add(map(rs));
+                }
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list;
+    }
+
     public boolean insertProduct(Product p) {
         String sql = "INSERT INTO Product (ProductName, Description, Price, Stock, "
                    + "ImageURL, Brand, Origin, WaterResist, CaseSize, Movement, CategoryID) "

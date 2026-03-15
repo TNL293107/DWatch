@@ -3,6 +3,7 @@ package servlet;
 import dao.OrderDAO;
 import model.Order;
 import model.OrderDetail;
+import util.VietQRUtil;
 
 import javax.servlet.*;
 import javax.servlet.annotation.WebServlet;
@@ -30,9 +31,19 @@ public class OrderConfirmServlet extends HttpServlet {
         try {
             int   orderID = Integer.parseInt(idParam);
             Order order   = orderDAO.getOrderByID(orderID);
+            if (order == null) {
+                resp.sendRedirect(req.getContextPath() + "/home");
+                return;
+            }
             List<OrderDetail> details = orderDAO.getOrderDetails(orderID);
             req.setAttribute("order",   order);
             req.setAttribute("details", details);
+            if (Order.PAYMENT_QR.equals(order.getPaymentMethod())) {
+                long amountVND = Math.round(order.getTotalAmount());
+                String addInfo = "DWatch DH" + orderID;
+                String qrUrl = VietQRUtil.getPaymentURL(getServletContext(), amountVND, addInfo);
+                req.setAttribute("vietqrUrl", qrUrl);
+            }
             req.getRequestDispatcher("/pages/orderConfirm.jsp").forward(req, resp);
         } catch (NumberFormatException e) {
             resp.sendRedirect(req.getContextPath() + "/home");
