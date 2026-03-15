@@ -190,31 +190,7 @@ You can use any watch images downloaded from Google Images or use placeholder im
 
 ---
 
-## Push code lên GitHub (cho chủ repo)
-
-### 1. Tạo repository trên GitHub
-
-- Vào [github.com](https://github.com) → **New repository**
-- Đặt tên (ví dụ: `DWatch`), không cần tích "Initialize with README" nếu đã có code local
-- Ghi lại URL repo (ví dụ: `https://github.com/<username>/DWatch.git`)
-
-### 2. Khởi tạo Git và push
-
-Trong thư mục gốc của project (chứa `pom.xml`), chạy:
-
-```bash
-cd "c:\Users\long2\Downloads\DWatch\DWatch"   # hoặc đường dẫn tới thư mục DWatch của bạn
-git init
-git add .
-git commit -m "Initial commit: DWatch e-commerce project"
-git branch -M main
-git remote add origin https://github.com/<username>/<tên-repo>.git
-git push -u origin main
-```
-
-Thay `<username>` và `<tên-repo>` bằng tên GitHub và tên repo của bạn.
-
-### 3. Lưu ý bảo mật
+### 1. Lưu ý bảo mật
 
 - Mật khẩu DB đọc từ file **`.env`** (hoặc biến môi trường). File `.env` đã được đưa vào `.gitignore` nên sẽ **không** bị push lên GitHub. Người clone chỉ cần tạo `.env` từ `.env.example` và điền thông tin của họ.
 
