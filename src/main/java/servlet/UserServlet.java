@@ -94,7 +94,9 @@ public class UserServlet extends HttpServlet {
         if (id > 0) {
             user.setUserID(id);
             req.getSession().setAttribute("loggedUser", user);
-            resp.sendRedirect(req.getContextPath() + "/home");
+            String redirect = req.getParameter("redirect");
+            resp.sendRedirect(redirect != null && !redirect.isEmpty()
+                    ? redirect : req.getContextPath() + "/home");
         } else {
             req.setAttribute("error", "Đăng ký thất bại. Vui lòng thử lại.");
             req.getRequestDispatcher("/pages/register.jsp").forward(req, resp);

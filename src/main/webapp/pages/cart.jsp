@@ -64,12 +64,8 @@
                                             <fmt:formatNumber value="${item.subtotal}" type="number" groupingUsed="true"/>₫
                                         </td>
                                         <td>
-                                            <form action="${pageContext.request.contextPath}/cart" method="post"
-                                                  style="display:inline">
-                                                <input type="hidden" name="action"    value="remove">
-                                                <input type="hidden" name="productID" value="${item.product.productID}">
-                                                <button type="submit" class="btn-remove" title="Xóa">✕</button>
-                                            </form>
+                                            <a href="${pageContext.request.contextPath}/cart?action=remove&amp;productID=${item.product.productID}"
+                                               class="btn-remove" title="Xóa" onclick="return confirm('Xóa sản phẩm này khỏi giỏ?');">✕</a>
                                         </td>
                                     </tr>
                                 </c:forEach>
@@ -104,44 +100,72 @@
                         </div>
                     </div>
 
-                    <!-- Delivery Information Form -->
-                    <div class="delivery-form">
-                        <h3>Thông Tin Giao Hàng</h3>
-                        <form action="${pageContext.request.contextPath}/cart" method="post" id="checkoutForm">
-                            <input type="hidden" name="action" value="checkout">
+                    <c:choose>
+                        <c:when test="${empty loggedUser}">
+                            <div class="delivery-form checkout-login-required">
+                                <h3>Đặt Hàng</h3>
+                                <p class="login-required-msg">Bạn cần đăng nhập (hoặc tạo tài khoản) để đặt hàng.</p>
+                                <div class="checkout-login-actions">
+                                    <a href="<c:url value='/login'><c:param name='redirect' value='${pageContext.request.contextPath}/cart'/></c:url>" class="btn-primary">Đăng nhập</a>
+                                    <a href="<c:url value='/register'><c:param name='redirect' value='${pageContext.request.contextPath}/cart'/></c:url>" class="btn-outline">Tạo tài khoản</a>
+                                </div>
+                            </div>
+                        </c:when>
+                        <c:otherwise>
+                            <!-- Delivery Information Form (logged in) -->
+                            <div class="delivery-form">
+                                <h3>Thông Tin Giao Hàng</h3>
+                                <form action="${pageContext.request.contextPath}/cart" method="post" id="checkoutForm">
+                                    <input type="hidden" name="action" value="checkout">
 
-                            <div class="form-group">
-                                <label>Họ và tên *</label>
-                                <input type="text" name="fullName" required
-                                       placeholder="Nguyễn Văn A" class="form-input">
+                                    <div class="form-group">
+                                        <label>Phương thức thanh toán *</label>
+                                        <div class="payment-options">
+                                            <label class="payment-option">
+                                                <input type="radio" name="paymentMethod" value="COD" checked>
+                                                <span>Thanh toán khi nhận hàng (COD)</span>
+                                            </label>
+                                            <label class="payment-option">
+                                                <input type="radio" name="paymentMethod" value="QR">
+                                                <span>Thanh toán bằng mã QR (VietQR)</span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Họ và tên *</label>
+                                        <input type="text" name="fullName" required
+                                               value="${loggedUser.fullName}" class="form-input">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Số điện thoại *</label>
+                                        <input type="tel" name="phone" required
+                                               value="${loggedUser.phone}" class="form-input">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Email *</label>
+                                        <input type="email" name="email" required
+                                               value="${loggedUser.email}" class="form-input">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Địa chỉ giao hàng *</label>
+                                        <textarea name="address" required rows="2"
+                                                  placeholder="Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành"
+                                                  class="form-input">${loggedUser.address}</textarea>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Ghi chú</label>
+                                        <textarea name="note" rows="2"
+                                                  placeholder="Ghi chú thêm (nếu có)..."
+                                                  class="form-input"></textarea>
+                                    </div>
+                                    <button type="submit" class="btn-order">
+                                        ✔ Đặt Hàng Ngay
+                                    </button>
+                                </form>
                             </div>
-                            <div class="form-group">
-                                <label>Số điện thoại *</label>
-                                <input type="tel" name="phone" required
-                                       placeholder="0901 234 567" class="form-input">
-                            </div>
-                            <div class="form-group">
-                                <label>Email</label>
-                                <input type="email" name="email"
-                                       placeholder="email@example.com" class="form-input">
-                            </div>
-                            <div class="form-group">
-                                <label>Địa chỉ giao hàng *</label>
-                                <textarea name="address" required rows="2"
-                                          placeholder="Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành"
-                                          class="form-input"></textarea>
-                            </div>
-                            <div class="form-group">
-                                <label>Ghi chú</label>
-                                <textarea name="note" rows="2"
-                                          placeholder="Ghi chú thêm (nếu có)..."
-                                          class="form-input"></textarea>
-                            </div>
-                            <button type="submit" class="btn-order">
-                                ✔ Đặt Hàng Ngay
-                            </button>
-                        </form>
-                    </div>
+                        </c:otherwise>
+                    </c:choose>
                 </div>
             </div>
         </c:otherwise>

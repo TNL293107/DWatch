@@ -28,7 +28,7 @@
                     </div>
                 </c:when>
                 <c:otherwise>
-                    <table class="admin-table">
+                    <table class="order-history-table">
                         <thead>
                             <tr>
                                 <th>Mã đơn</th>

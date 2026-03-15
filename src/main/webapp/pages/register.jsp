@@ -11,6 +11,7 @@
         </c:if>
 
         <form action="${pageContext.request.contextPath}/register" method="post">
+            <input type="hidden" name="redirect" value="${param.redirect}">
             <div class="form-group">
                 <label>Họ và tên *</label>
                 <input type="text" name="fullName" required class="form-input"

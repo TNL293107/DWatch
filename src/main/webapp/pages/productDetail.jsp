@@ -99,6 +99,9 @@
                     <%= isWishlisted ? "♥ Đã yêu thích" : "♡ Thêm yêu thích" %>
                 </button>
             </form>
+            <p style="margin-bottom:16px">
+                <a href="${pageContext.request.contextPath}/compare?add=${product.productID}" class="btn-compare">⚖ Thêm vào so sánh</a>
+            </p>
 
             <!-- Trust Badges -->
             <div class="trust-row">
