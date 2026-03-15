@@ -4,6 +4,8 @@
 
 Ứng dụng web bán đồng hồ xây bằng **Java (Servlet/JSP)**, **Maven**, **Microsoft SQL Server**. Hỗ trợ đăng ký/đăng nhập, giỏ hàng, đặt hàng (COD / VietQR), quên mật khẩu, tra cứu đơn hàng, so sánh sản phẩm, quản trị sản phẩm.
 
+**Setup Guide (Ver 1.5)** — Apache NetBeans 25 + Microsoft SQL Server Management Studio 22
+
 ---
 
 ## Công nghệ
