@@ -71,11 +71,14 @@ public class CartServlet extends HttpServlet {
     // ----------------------------------------------------------------
     private void doAdd(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
-
-        int productID = Integer.parseInt(req.getParameter("productID"));
+        Integer productID = parseInt(req.getParameter("productID"));
+        if (productID == null || productID <= 0) {
+            resp.sendRedirect(req.getContextPath() + "/cart");
+            return;
+        }
         int qty       = 1;
-        try { qty = Integer.parseInt(req.getParameter("quantity")); }
-        catch (Exception ignored) {}
+        Integer parsedQty = parseInt(req.getParameter("quantity"));
+        if (parsedQty != null && parsedQty > 0) qty = parsedQty;
 
         Map<Integer, CartItem> cart = getCart(req);
         if (cart.containsKey(productID)) {
@@ -93,8 +96,11 @@ public class CartServlet extends HttpServlet {
     // ----------------------------------------------------------------
     private void doRemove(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
-
-        int productID = Integer.parseInt(req.getParameter("productID"));
+        Integer productID = parseInt(req.getParameter("productID"));
+        if (productID == null || productID <= 0) {
+            resp.sendRedirect(req.getContextPath() + "/cart");
+            return;
+        }
         Map<Integer, CartItem> cart = getCart(req);
         cart.remove(productID);
         saveCart(req, cart);
@@ -239,5 +245,14 @@ public class CartServlet extends HttpServlet {
 
     private void saveCart(HttpServletRequest req, Map<Integer, CartItem> cart) {
         req.getSession(true).setAttribute(CART_KEY, cart);
+    }
+
+    private Integer parseInt(String value) {
+        if (value == null) return null;
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 }

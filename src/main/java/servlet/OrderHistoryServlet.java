@@ -28,9 +28,23 @@ public class OrderHistoryServlet extends HttpServlet {
         User user = getUser(req);
         String detailParam = req.getParameter("id");
 
-        if (detailParam != null) {
-            int orderID = Integer.parseInt(detailParam);
+        if (detailParam != null && !detailParam.trim().isEmpty()) {
+            Integer orderID = parseInt(detailParam);
+            if (orderID == null || orderID <= 0) {
+                req.setAttribute("error", "Mã đơn hàng không hợp lệ.");
+                req.setAttribute("orders", orderDAO.getOrdersByEmail(user.getEmail()));
+                req.getRequestDispatcher("/pages/orderHistory.jsp").forward(req, resp);
+                return;
+            }
+
             Order order = orderDAO.getOrderByID(orderID);
+            if (order == null || !sameEmail(order.getEmail(), user.getEmail())) {
+                req.setAttribute("error", "Không tìm thấy đơn hàng.");
+                req.setAttribute("orders", orderDAO.getOrdersByEmail(user.getEmail()));
+                req.getRequestDispatcher("/pages/orderHistory.jsp").forward(req, resp);
+                return;
+            }
+
             List<OrderDetail> details = orderDAO.getOrderDetails(orderID);
             req.setAttribute("order", order);
             req.setAttribute("details", details);
@@ -49,5 +63,18 @@ public class OrderHistoryServlet extends HttpServlet {
 
     private User getUser(HttpServletRequest req) {
         return (User) req.getSession().getAttribute("loggedUser");
+    }
+
+    private Integer parseInt(String value) {
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private boolean sameEmail(String a, String b) {
+        if (a == null || b == null) return false;
+        return a.trim().equalsIgnoreCase(b.trim());
     }
 }
