@@ -38,7 +38,11 @@ public class WishlistServlet extends HttpServlet {
         }
         req.setCharacterEncoding("UTF-8");
         User user      = getUser(req);
-        int productID  = Integer.parseInt(req.getParameter("productID"));
+        Integer productID  = parseInt(req.getParameter("productID"));
+        if (productID == null || productID <= 0) {
+            resp.sendRedirect(req.getContextPath() + "/wishlist");
+            return;
+        }
         String action  = req.getParameter("action");
         String referer = req.getHeader("Referer");
 
@@ -56,5 +60,14 @@ public class WishlistServlet extends HttpServlet {
     }
     private User getUser(HttpServletRequest req) {
         return (User) req.getSession().getAttribute("loggedUser");
+    }
+
+    private Integer parseInt(String value) {
+        if (value == null) return null;
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 }
