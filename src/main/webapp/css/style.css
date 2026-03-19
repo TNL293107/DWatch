@@ -67,8 +67,16 @@ img { max-width: 100%; display: block; }
 .header-inner {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 20px;
-  padding: 16px 20px;
+  padding: 16px clamp(12px, 2vw, 32px);
+}
+
+/* Make header stretch to screen edges while keeping responsive padding */
+.header-inner.container {
+  max-width: 100%;
+  padding-left: clamp(12px, 2vw, 32px);
+  padding-right: clamp(12px, 2vw, 32px);
 }
 
 .logo { font-family: var(--font-serif); font-size: 26px; font-weight: 600; letter-spacing: 3px; }
@@ -139,6 +147,13 @@ img { max-width: 100%; display: block; }
 .nav-inner {
   display: flex;
   gap: 0;
+}
+
+/* Make navbar stretch to screen edges while keeping responsive padding */
+.nav-inner.container {
+  max-width: 100%;
+  padding-left: clamp(12px, 2vw, 32px);
+  padding-right: clamp(12px, 2vw, 32px);
 }
 .nav-link {
   display: block;
@@ -773,6 +788,7 @@ img { max-width: 100%; display: block; }
   display: flex;
   align-items: center;
   gap: 6px;
+  margin-left: auto;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   color: var(--text);

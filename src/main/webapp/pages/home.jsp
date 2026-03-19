@@ -8,8 +8,8 @@
 <!-- Hero Banner -->
 <section class="hero">
     <div class="hero-content">
-        <p class="hero-sub">BỘ SƯU TẬP MỚI 2025</p>
-        <h1 class="hero-title">Đồng Hồ Chính Hãng<br><span>Phong Cách Đẳng Cấp</span></h1>
+        <p class="hero-sub">BỘ SƯU TẬP MỚI 2026</p>
+        <h1 class="hero-title">Đồng Hồ Chính Hãng<br><span>Đỉnh Cao Thanh Lịch</span></h1>
         <a href="#products" class="hero-btn">Khám Phá Ngay</a>
     </div>
 </section>

@@ -7,7 +7,6 @@
 
     <display-name>DWatch E-Commerce</display-name>
 
-    <!-- VietQR: 3 tham số tạo mã QR. param-name phải đúng để code đọc được. -->
     <!-- (1) vietqr_acq_id = Mã ngân hàng: 6 số (VD 970422=MB) hoặc tên ngắn (MB, Vietinbank). -->
     <context-param>
         <param-name>vietqr_acq_id</param-name>
