@@ -1,4 +1,4 @@
-package model;
+package com.dwatch.user;
 
 import java.util.Date;
 

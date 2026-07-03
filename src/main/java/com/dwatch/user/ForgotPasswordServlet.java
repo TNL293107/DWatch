@@ -1,8 +1,6 @@
-package servlet;
+package com.dwatch.user;
 
-import dao.UserDAO;
-import model.User;
-import util.EmailUtil;
+import com.dwatch.common.EmailUtil;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;

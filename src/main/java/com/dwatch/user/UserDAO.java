@@ -1,7 +1,7 @@
-package dao;
+package com.dwatch.user;
 
-import model.User;
-import util.DBUtil;
+import com.dwatch.common.DBUtil;
+import com.dwatch.common.PasswordUtil;
 
 import java.sql.*;
 
@@ -14,7 +14,7 @@ public class UserDAO {
              PreparedStatement ps = cn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, user.getFullName());
             ps.setString(2, user.getEmail());
-            ps.setString(3, user.getPassword());
+            ps.setString(3, PasswordUtil.hash(user.getPassword()));
             ps.setString(4, user.getPhone());
             ps.setString(5, user.getAddress());
             ps.executeUpdate();
@@ -25,18 +25,39 @@ public class UserDAO {
         return -1;
     }
 
-    /** Đăng nhập. Trả về User nếu đúng, null nếu sai */
+    /**
+     * Đăng nhập. Trả về User nếu đúng, null nếu sai.
+     * Chấp nhận cả mật khẩu cũ dạng plaintext (trước khi có bcrypt) và tự động
+     * băm lại (rehash) ngay khi xác thực thành công, để không cần bắt người
+     * dùng cũ đặt lại mật khẩu.
+     */
     public User login(String email, String password) {
-        String sql = "SELECT * FROM Users WHERE Email = ? AND Password = ?";
+        String sql = "SELECT * FROM Users WHERE Email = ?";
         try (Connection cn = DBUtil.getConnection();
              PreparedStatement ps = cn.prepareStatement(sql)) {
             ps.setString(1, email);
-            ps.setString(2, password);
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return mapUser(rs);
+                if (!rs.next()) return null;
+                User user = mapUser(rs);
+                if (!PasswordUtil.verify(password, user.getPassword())) return null;
+                if (PasswordUtil.isLegacyPlaintext(user.getPassword())) {
+                    String newHash = PasswordUtil.hash(password);
+                    rehashPassword(cn, user.getUserID(), newHash);
+                    user.setPassword(newHash);
+                }
+                return user;
             }
         } catch (SQLException e) { e.printStackTrace(); }
         return null;
+    }
+
+    private void rehashPassword(Connection cn, int userID, String newHash) throws SQLException {
+        String sql = "UPDATE Users SET Password=? WHERE UserID=?";
+        try (PreparedStatement ps = cn.prepareStatement(sql)) {
+            ps.setString(1, newHash);
+            ps.setInt(2, userID);
+            ps.executeUpdate();
+        }
     }
 
     /** Kiểm tra email đã tồn tại chưa */
@@ -68,15 +89,29 @@ public class UserDAO {
 
     /** Đổi mật khẩu */
     public boolean changePassword(int userID, String oldPass, String newPass) {
-        String sql = "UPDATE Users SET Password=? WHERE UserID=? AND Password=?";
+        String storedHash = getPasswordHashByUserId(userID);
+        if (storedHash == null || !PasswordUtil.verify(oldPass, storedHash)) return false;
+
+        String sql = "UPDATE Users SET Password=? WHERE UserID=?";
         try (Connection cn = DBUtil.getConnection();
              PreparedStatement ps = cn.prepareStatement(sql)) {
-            ps.setString(1, newPass);
+            ps.setString(1, PasswordUtil.hash(newPass));
             ps.setInt(2, userID);
-            ps.setString(3, oldPass);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) { e.printStackTrace(); }
         return false;
+    }
+
+    private String getPasswordHashByUserId(int userID) {
+        String sql = "SELECT Password FROM Users WHERE UserID = ?";
+        try (Connection cn = DBUtil.getConnection();
+             PreparedStatement ps = cn.prepareStatement(sql)) {
+            ps.setInt(1, userID);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getString("Password");
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return null;
     }
 
     /** Tìm user theo email (dùng cho quên mật khẩu) */
@@ -97,7 +132,7 @@ public class UserDAO {
         String sql = "UPDATE Users SET Password = ? WHERE Email = ?";
         try (Connection cn = DBUtil.getConnection();
              PreparedStatement ps = cn.prepareStatement(sql)) {
-            ps.setString(1, newPassword);
+            ps.setString(1, PasswordUtil.hash(newPassword));
             ps.setString(2, email);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) { e.printStackTrace(); }

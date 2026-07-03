@@ -1,6 +1,4 @@
-package servlet;
-
-import dao.UserDAO;
+package com.dwatch.user;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
