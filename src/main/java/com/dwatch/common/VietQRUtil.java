@@ -1,4 +1,4 @@
-package util;
+package com.dwatch.common;
 
 import javax.servlet.ServletContext;
 import java.io.UnsupportedEncodingException;

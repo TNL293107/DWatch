@@ -1,13 +1,14 @@
-package util;
+package com.dwatch.common;
 
 import org.apache.commons.mail.DefaultAuthenticator;
 import org.apache.commons.mail.HtmlEmail;
 
 public class EmailUtil {
 
-    private static final String FROM_EMAIL   = "nl034993@gmail.com"; // ← Gmail của bạn
-    private static final String APP_PASSWORD = "afofnecrzxmfhsft";  // ← App Password 16 ký tự
-    private static final String FROM_NAME    = "DWatch Shop";
+    // Cấu hình qua .env: MAIL_FROM, MAIL_APP_PASSWORD, MAIL_FROM_NAME (không hardcode credential trong source).
+    private static final String FROM_EMAIL   = AppConfig.get("MAIL_FROM", "");
+    private static final String APP_PASSWORD = AppConfig.get("MAIL_APP_PASSWORD", "");
+    private static final String FROM_NAME    = AppConfig.get("MAIL_FROM_NAME", "DWatch Shop");
 
     public static void sendOrderConfirmation(String toEmail, String customerName,
                                              int orderID, double total,
@@ -69,6 +70,50 @@ public class EmailUtil {
               </div>
             </div>
             """, name, orderID, statusText, itemsHTML, total, address);
+    }
+
+    /** Gửi email thông báo khi admin cập nhật trạng thái đơn hàng */
+    public static void sendOrderStatusUpdate(String toEmail, String customerName,
+                                             int orderID, String newStatusLabel) {
+        try {
+            HtmlEmail email = new HtmlEmail();
+            email.setHostName("smtp.gmail.com");
+            email.setSmtpPort(587);
+            email.setAuthenticator(new DefaultAuthenticator(FROM_EMAIL, APP_PASSWORD));
+            email.setStartTLSEnabled(true);
+            email.setFrom(FROM_EMAIL, FROM_NAME);
+            email.setSubject("DWatch - Cập nhật đơn hàng #" + orderID);
+            email.addTo(toEmail, customerName);
+            email.setCharset("UTF-8");
+            email.setHtmlMsg(buildStatusUpdateBody(customerName, orderID, newStatusLabel));
+            email.send();
+            System.out.println("✔ Email cập nhật trạng thái đã gửi tới: " + toEmail);
+        } catch (Exception e) {
+            System.err.println("✘ Lỗi gửi email cập nhật trạng thái: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private static String buildStatusUpdateBody(String name, int orderID, String newStatusLabel) {
+        return String.format("""
+            <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;
+                        border:1px solid #ddd;border-radius:8px;overflow:hidden">
+              <div style="background:#1a1a1a;padding:24px;text-align:center">
+                <h1 style="color:#c9a84c;margin:0">&#8987; DWatch</h1>
+              </div>
+              <div style="padding:24px">
+                <p>Xin chào <strong>%s</strong>,</p>
+                <p>Đơn hàng <strong>#%d</strong> của bạn vừa được cập nhật trạng thái:</p>
+                <p style="font-size:18px;font-weight:bold;color:#c9a84c">%s</p>
+                <p style="color:#888;font-size:13px">
+                  Bạn có thể tra cứu chi tiết đơn hàng trên website DWatch bất cứ lúc nào.
+                </p>
+              </div>
+              <div style="background:#1a1a1a;padding:16px;text-align:center">
+                <p style="color:#888;margin:0;font-size:13px">© 2025 DWatch — Đồng Hồ Chính Hãng</p>
+              </div>
+            </div>
+            """, name, orderID, newStatusLabel);
     }
 
     /** Gửi email chứa link đặt lại mật khẩu (quên mật khẩu) */
