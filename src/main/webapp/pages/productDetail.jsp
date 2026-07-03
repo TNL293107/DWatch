@@ -31,6 +31,18 @@
             <span class="detail-brand">${product.brand}</span>
             <h1 class="detail-name">${product.productName}</h1>
 
+            <div class="detail-rating">
+                <c:choose>
+                    <c:when test="${reviewCount > 0}">
+                        ⭐ <fmt:formatNumber value="${averageRating}" maxFractionDigits="1"/>/5
+                        <span class="reviews-count">(${reviewCount} đánh giá)</span>
+                    </c:when>
+                    <c:otherwise>
+                        <span class="reviews-count">Chưa có đánh giá</span>
+                    </c:otherwise>
+                </c:choose>
+            </div>
+
             <div class="detail-price">
                 <fmt:formatNumber value="${product.price}" type="number" groupingUsed="true"/>₫
             </div>
@@ -61,6 +73,7 @@
 
             <!-- Add to Cart Form -->
             <form action="${pageContext.request.contextPath}/cart" method="post" class="atc-form">
+                <input type="hidden" name="csrfToken" value="${sessionScope.csrfToken}">
                 <input type="hidden" name="action"    value="add">
                 <input type="hidden" name="productID" value="${product.productID}">
                 <div class="qty-row">
@@ -84,15 +97,16 @@
 
             <!-- Wishlist Button -->
             <%
-                model.User wlUser = (model.User) session.getAttribute("loggedUser");
+                com.dwatch.user.User wlUser = (com.dwatch.user.User) session.getAttribute("loggedUser");
                 boolean isWishlisted = false;
                 if (wlUser != null) {
-                    dao.WishlistDAO wlDAO = new dao.WishlistDAO();
+                    com.dwatch.wishlist.WishlistDAO wlDAO = new com.dwatch.wishlist.WishlistDAO();
                     isWishlisted = wlDAO.isWishlisted(wlUser.getUserID(),
-                        ((model.Product) request.getAttribute("product")).getProductID());
+                        ((com.dwatch.product.Product) request.getAttribute("product")).getProductID());
                 }
             %>
             <form action="${pageContext.request.contextPath}/wishlist" method="post" style="margin-bottom:16px">
+                <input type="hidden" name="csrfToken" value="${sessionScope.csrfToken}">
                 <input type="hidden" name="productID" value="${product.productID}">
                 <input type="hidden" name="action" value="<%= isWishlisted ? "remove" : "add" %>">
                 <button type="submit" class="btn-wishlist <%= isWishlisted ? "wishlisted" : "" %>">
@@ -147,6 +161,7 @@ function changeQty(delta) {
                             <fmt:formatNumber value="${p.price}" type="number" groupingUsed="true"/>₫
                         </span>
                         <form action="${pageContext.request.contextPath}/cart" method="post" style="display:inline">
+                            <input type="hidden" name="csrfToken" value="${sessionScope.csrfToken}">
                             <input type="hidden" name="action"    value="add">
                             <input type="hidden" name="productID" value="${p.productID}">
                             <input type="hidden" name="quantity"  value="1">
@@ -159,5 +174,89 @@ function changeQty(delta) {
     </div>
 </section>
 </c:if>
+
+<!-- Đánh giá sản phẩm -->
+<section class="container reviews-section" id="reviews">
+    <h2 class="section-title">Đánh Giá Sản Phẩm</h2>
+
+    <div class="reviews-summary">
+        <c:choose>
+            <c:when test="${reviewCount > 0}">
+                <span class="reviews-avg">⭐ <fmt:formatNumber value="${averageRating}" maxFractionDigits="1"/>/5</span>
+                <span class="reviews-count">(${reviewCount} đánh giá)</span>
+            </c:when>
+            <c:otherwise>
+                <span class="reviews-count">Chưa có đánh giá nào cho sản phẩm này.</span>
+            </c:otherwise>
+        </c:choose>
+    </div>
+
+    <c:choose>
+        <c:when test="${not empty sessionScope.loggedUser}">
+            <form action="${pageContext.request.contextPath}/product" method="post" class="review-form">
+                <input type="hidden" name="csrfToken" value="${sessionScope.csrfToken}">
+                <input type="hidden" name="productID" value="${product.productID}">
+                <div class="form-group">
+                    <label>Đánh giá của bạn *</label>
+                    <select name="rating" required class="form-input" style="max-width:200px">
+                        <option value="5">5 - Tuyệt vời</option>
+                        <option value="4">4 - Tốt</option>
+                        <option value="3">3 - Bình thường</option>
+                        <option value="2">2 - Không hài lòng</option>
+                        <option value="1">1 - Tệ</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Nhận xét</label>
+                    <textarea name="comment" rows="3" class="form-input" placeholder="Chia sẻ trải nghiệm của bạn..."></textarea>
+                </div>
+                <button type="submit" class="btn-primary">Gửi Đánh Giá</button>
+            </form>
+        </c:when>
+        <c:otherwise>
+            <p class="review-login-prompt">
+                <a href="${pageContext.request.contextPath}/login?redirect=${pageContext.request.contextPath}/product?id=${product.productID}">Đăng nhập</a>
+                để viết đánh giá.
+            </p>
+        </c:otherwise>
+    </c:choose>
+
+    <c:choose>
+        <c:when test="${empty reviews}">
+            <p class="empty-state-inline">Chưa có đánh giá nào. Hãy là người đầu tiên!</p>
+        </c:when>
+        <c:otherwise>
+            <div class="review-list">
+                <c:forEach var="r" items="${reviews}">
+                    <div class="review-item">
+                        <div class="review-header">
+                            <strong><c:out value="${not empty r.authorName ? r.authorName : 'Ẩn danh'}"/></strong>
+                            <span class="review-stars">
+                                <c:forEach begin="1" end="5" var="i">${i <= r.rating ? '★' : '☆'}</c:forEach>
+                            </span>
+                            <span class="review-date"><fmt:formatDate value="${r.createdDate}" pattern="dd/MM/yyyy"/></span>
+                        </div>
+                        <p class="review-comment"><c:out value="${r.comment}"/></p>
+                    </div>
+                </c:forEach>
+            </div>
+
+            <c:if test="${reviewTotalPages > 1}">
+                <div class="pagination">
+                    <c:if test="${reviewCurrentPage > 1}">
+                        <a href="${pageContext.request.contextPath}/product?id=${product.productID}&reviewPage=${reviewCurrentPage - 1}#reviews" class="page-btn">‹</a>
+                    </c:if>
+                    <c:forEach begin="1" end="${reviewTotalPages}" var="i">
+                        <a href="${pageContext.request.contextPath}/product?id=${product.productID}&reviewPage=${i}#reviews"
+                           class="page-btn ${i == reviewCurrentPage ? 'active' : ''}">${i}</a>
+                    </c:forEach>
+                    <c:if test="${reviewCurrentPage < reviewTotalPages}">
+                        <a href="${pageContext.request.contextPath}/product?id=${product.productID}&reviewPage=${reviewCurrentPage + 1}#reviews" class="page-btn">›</a>
+                    </c:if>
+                </div>
+            </c:if>
+        </c:otherwise>
+    </c:choose>
+</section>
 
 <%@ include file="footer.jsp" %>
