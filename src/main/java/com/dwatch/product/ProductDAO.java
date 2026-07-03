@@ -1,14 +1,10 @@
-package dao;
+package com.dwatch.product;
 
-import model.Product;
-import util.DBUtil;
+import com.dwatch.common.DBUtil;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 
 public class ProductDAO {
 

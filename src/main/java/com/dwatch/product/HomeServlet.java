@@ -1,9 +1,6 @@
-package servlet;
+package com.dwatch.product;
 
-import dao.CategoryDAO;
-import dao.ProductDAO;
-import model.Category;
-import model.Product;
+import com.dwatch.common.Pagination;
 
 import javax.servlet.*;
 import javax.servlet.annotation.WebServlet;
@@ -34,11 +31,10 @@ public class HomeServlet extends HttpServlet {
         String waterP     = req.getParameter("water");
         String pageParam  = req.getParameter("page");
 
-        int page      = 1;
+        int page      = Pagination.parsePage(pageParam);
         int catID     = 0;
         double minPrice = 0, maxPrice = 0;
 
-        try { page    = Math.max(1, Integer.parseInt(pageParam)); }  catch (Exception e) {}
         try { catID   = Integer.parseInt(catParam); }                catch (Exception e) {}
         try { minPrice = Double.parseDouble(minPriceP); }            catch (Exception e) {}
         try { maxPrice = Double.parseDouble(maxPriceP); }            catch (Exception e) {}
@@ -66,7 +62,7 @@ public class HomeServlet extends HttpServlet {
             if (catID > 0) req.setAttribute("selectedCat", catID);
         }
 
-        int totalPages = (int) Math.ceil((double) totalProducts / PAGE_SIZE);
+        int totalPages = new Pagination(page, PAGE_SIZE, totalProducts).getTotalPages();
 
         // --- Dữ liệu cho filter sidebar ---
         List<Category> categories   = categoryDAO.getAllCategories();

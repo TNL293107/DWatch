@@ -1,7 +1,4 @@
-package servlet;
-
-import dao.ProductDAO;
-import model.Product;
+package com.dwatch.product;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;

@@ -1,4 +1,4 @@
-package model;
+package com.dwatch.product;
 
 public class Product {
     private int productID;
