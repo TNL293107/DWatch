@@ -24,6 +24,7 @@
                 <!-- Cart Items Table -->
                 <div class="cart-items-col">
                     <form action="${pageContext.request.contextPath}/cart" method="post" id="cartForm">
+                        <input type="hidden" name="csrfToken" value="${sessionScope.csrfToken}">
                         <input type="hidden" name="action" value="update">
                         <table class="cart-table">
                             <thead>
@@ -92,12 +93,40 @@
                             <span>Phí vận chuyển:</span>
                             <strong>Miễn phí</strong>
                         </div>
+                        <c:if test="${not empty appliedVoucher}">
+                            <div class="summary-row voucher-row">
+                                <span>Giảm giá (${appliedVoucher.code}):</span>
+                                <strong>-<fmt:formatNumber value="${discountAmount}" type="number" groupingUsed="true"/>₫</strong>
+                            </div>
+                        </c:if>
                         <div class="summary-row total-row">
                             <span>Tổng cộng:</span>
                             <strong class="grand-total">
-                                <fmt:formatNumber value="${total}" type="number" groupingUsed="true"/>₫
+                                <fmt:formatNumber value="${total - (not empty discountAmount ? discountAmount : 0)}" type="number" groupingUsed="true"/>₫
                             </strong>
                         </div>
+                    </div>
+
+                    <!-- Voucher Code -->
+                    <div class="voucher-box">
+                        <c:choose>
+                            <c:when test="${not empty appliedVoucher}">
+                                <form action="${pageContext.request.contextPath}/cart" method="post">
+                                    <input type="hidden" name="csrfToken" value="${sessionScope.csrfToken}">
+                                    <input type="hidden" name="action" value="removeVoucher">
+                                    <span>Đã áp dụng mã <strong>${appliedVoucher.code}</strong></span>
+                                    <button type="submit" class="btn-outline btn-sm">Hủy mã</button>
+                                </form>
+                            </c:when>
+                            <c:otherwise>
+                                <form action="${pageContext.request.contextPath}/cart" method="post" class="voucher-form">
+                                    <input type="hidden" name="csrfToken" value="${sessionScope.csrfToken}">
+                                    <input type="hidden" name="action" value="applyVoucher">
+                                    <input type="text" name="voucherCode" class="form-input" placeholder="Nhập mã giảm giá">
+                                    <button type="submit" class="btn-outline btn-sm">Áp dụng</button>
+                                </form>
+                            </c:otherwise>
+                        </c:choose>
                     </div>
 
                     <c:choose>
@@ -116,6 +145,7 @@
                             <div class="delivery-form">
                                 <h3>Thông Tin Giao Hàng</h3>
                                 <form action="${pageContext.request.contextPath}/cart" method="post" id="checkoutForm">
+                                    <input type="hidden" name="csrfToken" value="${sessionScope.csrfToken}">
                                     <input type="hidden" name="action" value="checkout">
 
                                     <div class="form-group">
