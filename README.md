@@ -2,94 +2,65 @@
 
 **Repository:** [https://github.com/TNL293107/DWatch](https://github.com/TNL293107/DWatch)
 
-Ứng dụng web bán đồng hồ xây bằng **Java (Servlet/JSP)**, **Maven**, **Microsoft SQL Server**. Hỗ trợ đăng ký/đăng nhập, giỏ hàng, đặt hàng (COD / VietQR), quên mật khẩu, tra cứu đơn hàng, so sánh sản phẩm, quản trị sản phẩm.
+Ứng dụng web bán đồng hồ xây bằng **Java (Servlet/JSP)**, **Maven**, **Microsoft SQL Server**. Hỗ trợ đăng ký/đăng nhập (mật khẩu băm bcrypt), giỏ hàng, mã giảm giá, đặt hàng (COD / VietQR), theo dõi trạng thái đơn hàng, đánh giá sản phẩm, quên mật khẩu, tra cứu đơn hàng, so sánh sản phẩm, quản trị sản phẩm/đơn hàng/mã giảm giá và dashboard thống kê cho admin.
 
-**Setup Guide (Ver 1.5)** — Apache NetBeans 25 + Microsoft SQL Server Management Studio 22
+**Setup Guide (Ver 2.0)** — Apache NetBeans 25 + Microsoft SQL Server Management Studio 22
 
 ---
 
 ## Công nghệ
 
-- **Backend:** Java 17, Servlet 4.0, JSP, JSTL  
-- **Build:** Maven 3.x  
-- **Database:** Microsoft SQL Server  
-- **Deploy:** WAR → Apache Tomcat 9/10  
-- **Email:** Apache Commons Email (Gmail SMTP) — xác nhận đơn hàng, đặt lại mật khẩu  
+- **Backend:** Java 17, Servlet 4.0, JSP, JSTL
+- **Build:** Maven 3.x
+- **Database:** Microsoft SQL Server
+- **Deploy:** WAR → Apache Tomcat 9/10
+- **Bảo mật:** BCrypt (băm mật khẩu), CSRF token trên mọi form POST
+- **Email:** Apache Commons Email (Gmail SMTP) — xác nhận đơn hàng, đặt lại mật khẩu, thông báo đổi trạng thái đơn
+- **Test:** JUnit 5, AssertJ, Mockito (`src/test/java`)
 
 ---
 
 ## Cấu trúc project (Maven)
 
+Mã nguồn tổ chức theo **feature/domain** (không theo layer) dưới package gốc `com.dwatch`:
+
 ```
 DWatch/
 ├── pom.xml
-├── .env.example          ← copy thành .env, điền DB + (tùy chọn) email
-├── database.sql          ← script tạo DB và bảng chính
+├── .env.example              ← copy thành .env, điền DB + (tùy chọn) email/admin
+├── database.sql              ← script tạo DB và bảng chính
 ├── database_add_payment_method.sql
 ├── database_password_reset.sql
+├── database_order_status.sql
+├── database_reviews.sql
+├── database_vouchers.sql
+├── LICENSE
 ├── README.md
-└── src/main/
-    ├── java/
-    │   ├── dao/
-    │   │   ├── CategoryDAO.java
-    │   │   ├── OrderDAO.java
-    │   │   ├── ProductDAO.java
-    │   │   ├── UserDAO.java
-    │   │   └── WishlistDAO.java
-    │   ├── model/
-    │   │   ├── CartItem.java
-    │   │   ├── Category.java
-    │   │   ├── Order.java
-    │   │   ├── OrderDetail.java
-    │   │   ├── Product.java
-    │   │   └── User.java
-    │   ├── servlet/
-    │   │   ├── AdminLoginServlet.java
-    │   │   ├── CartServlet.java
-    │   │   ├── CharsetFilter.java
-    │   │   ├── CompareServlet.java
-    │   │   ├── ForgotPasswordServlet.java
-    │   │   ├── HomeServlet.java
-    │   │   ├── OrderConfirmServlet.java
-    │   │   ├── OrderHistoryServlet.java
-    │   │   ├── OrderLookupServlet.java
-    │   │   ├── ProductDetailServlet.java
-    │   │   ├── ProductSetupServlet.java
-    │   │   ├── ResetPasswordServlet.java
-    │   │   ├── UserServlet.java
-    │   │   └── WishlistServlet.java
-    │   └── util/
-    │       ├── DBUtil.java
-    │       ├── EmailUtil.java
-    │       └── VietQRUtil.java          ← tạo mã QR thanh toán (VietQR)
-    └── webapp/
-        ├── WEB-INF/
-        │   └── web.xml                  ← context-param VietQR (số TK, tên NH)
-        ├── css/
-        │   ├── admin.css
-        │   └── style.css
-        ├── images/
-        ├── pages/
-        │   ├── adminLogin.jsp
-        │   ├── cart.jsp
-        │   ├── compare.jsp
-        │   ├── footer.jsp
-        │   ├── forgotPassword.jsp
-        │   ├── header.jsp
-        │   ├── home.jsp
-        │   ├── login.jsp
-        │   ├── orderConfirm.jsp
-        │   ├── orderDetail.jsp
-        │   ├── orderHistory.jsp
-        │   ├── orderLookup.jsp
-        │   ├── orderLookupResult.jsp
-        │   ├── productDetail.jsp
-        │   ├── productSetup.jsp
-        │   ├── profile.jsp
-        │   ├── register.jsp
-        │   ├── resetPassword.jsp
-        │   └── wishlist.jsp
-        └── index.jsp
+└── src/
+    ├── main/
+    │   ├── java/com/dwatch/
+    │   │   ├── common/     DBUtil, AppConfig, EmailUtil, VietQRUtil, PasswordUtil,
+    │   │   │               CsrfUtil, CsrfFilter, CharsetFilter, Pagination
+    │   │   ├── product/    Product, Category, ProductDAO, CategoryDAO,
+    │   │   │               HomeServlet, ProductDetailServlet, CompareServlet
+    │   │   ├── cart/       CartItem, CartServlet
+    │   │   ├── order/      Order, OrderDetail, OrderDAO, OrderConfirmServlet,
+    │   │   │               OrderHistoryServlet, OrderLookupServlet
+    │   │   ├── user/       User, UserDAO, UserServlet,
+    │   │   │               ForgotPasswordServlet, ResetPasswordServlet
+    │   │   ├── wishlist/   WishlistDAO, WishlistServlet
+    │   │   ├── review/     Review, ReviewDAO
+    │   │   ├── voucher/    Voucher, VoucherDAO
+    │   │   └── admin/      AdminDAO, AdminLoginServlet, AdminBootstrapListener,
+    │   │                   ProductSetupServlet, AdminOrderServlet,
+    │   │                   AdminVoucherServlet, AdminDashboardServlet,
+    │   │                   StatsDAO, TopProduct, RevenuePoint
+    │   └── webapp/
+    │       ├── WEB-INF/web.xml    ← context-param VietQR, filter mapping (Charset → Csrf)
+    │       ├── css/{style,admin}.css
+    │       ├── images/
+    │       └── pages/*.jsp
+    └── test/java/com/dwatch/     ← JUnit 5 unit tests (mirrors main package structure)
 ```
 
 ---
@@ -98,19 +69,26 @@ DWatch/
 
 | Chức năng | Mô tả |
 |-----------|--------|
-| **Trang chủ** | Danh sách sản phẩm, tìm kiếm, lọc theo danh mục |
-| **Chi tiết sản phẩm** | Ảnh, mô tả, thông số, thêm giỏ, yêu thích, **thêm vào so sánh** |
-| **Giỏ hàng** | Sửa/xóa số lượng, cập nhật giỏ; **checkout bắt buộc đăng nhập** (hoặc tạo tài khoản) |
-| **Thanh toán** | **COD** (thanh toán khi nhận hàng) hoặc **VietQR** (mã QR đúng số tiền, chuẩn VietQR) |
-| **Tình trạng đơn** | **Đã thanh toán / Chưa thanh toán** — hiển thị trong email xác nhận và trang đơn hàng |
-| **Đăng ký / Đăng nhập** | Session user; redirect về giỏ hàng sau khi đăng nhập nếu đang checkout |
+| **Trang chủ** | Danh sách sản phẩm, tìm kiếm, lọc theo danh mục, phân trang |
+| **Chi tiết sản phẩm** | Ảnh, mô tả, thông số, thêm giỏ, yêu thích, **thêm vào so sánh**, **đánh giá & xếp hạng sao** |
+| **Đánh giá sản phẩm** | Người dùng đã đăng nhập gửi đánh giá 1–5 sao + nhận xét; hiển thị điểm trung bình và danh sách đánh giá (phân trang) |
+| **Giỏ hàng** | Sửa/xóa số lượng, **áp dụng mã giảm giá**, cập nhật giỏ; checkout bắt buộc đăng nhập (hoặc tạo tài khoản) |
+| **Mã giảm giá (Voucher)** | Giảm theo % hoặc số tiền cố định, có điều kiện đơn tối thiểu, giới hạn lượt dùng, ngày hết hạn |
+| **Thanh toán** | **COD** (thanh toán khi nhận hàng) hoặc **VietQR** (mã QR đúng số tiền sau giảm giá) |
+| **Trạng thái đơn hàng** | Vòng đời chi tiết: Chờ xử lý → Đã xác nhận → Đang giao hàng → Đã giao hàng (hoặc Đã hủy); admin cập nhật, khách nhận email thông báo khi trạng thái thay đổi |
+| **Tình trạng thanh toán** | Đã thanh toán / Chưa thanh toán — hiển thị riêng biệt với trạng thái xử lý đơn |
+| **Đăng ký / Đăng nhập** | Mật khẩu băm bằng **BCrypt**; tài khoản cũ (mật khẩu thô) tự động nâng cấp khi đăng nhập lần kế tiếp; session user; redirect về giỏ hàng sau khi đăng nhập nếu đang checkout |
+| **Bảo vệ CSRF** | Mọi form POST đều mang token CSRF theo phiên, request thiếu/sai token bị từ chối (403) |
 | **Quên mật khẩu** | Nhập email → gửi link đặt lại mật khẩu (hiệu lực 1 giờ) qua email |
 | **Tra cứu đơn hàng** | **Không cần đăng nhập**: nhập Mã đơn + SĐT hoặc Email → xem trạng thái và chi tiết đơn |
 | **So sánh sản phẩm** | Chọn tối đa 3 sản phẩm từ trang chi tiết → bảng so sánh (giá, thương hiệu, xuất xứ, kích thước, bộ máy, kháng nước...) |
-| **Lịch sử đơn hàng** | Xem danh sách đơn và chi tiết (chỉ user đã đăng nhập) |
+| **Lịch sử đơn hàng** | Danh sách đơn (có phân trang) và chi tiết (chỉ user đã đăng nhập) |
 | **Yêu thích (Wishlist)** | Thêm/bỏ sản phẩm yêu thích (cần đăng nhập) |
-| **Email** | Xác nhận đơn hàng + tình trạng thanh toán; email đặt lại mật khẩu |
-| **Admin** | Đăng nhập admin, CRUD sản phẩm (kèm ảnh) |
+| **Email** | Xác nhận đơn hàng + tình trạng thanh toán; đặt lại mật khẩu; thông báo đổi trạng thái đơn |
+| **Admin — Sản phẩm** | Đăng nhập admin (mật khẩu băm bcrypt), CRUD sản phẩm (kèm ảnh) |
+| **Admin — Đơn hàng** | Danh sách đơn (phân trang, lọc theo trạng thái), cập nhật trạng thái từng đơn |
+| **Admin — Mã giảm giá** | CRUD mã giảm giá (thêm/sửa/vô hiệu hóa) |
+| **Admin — Dashboard** | Tổng doanh thu, số đơn theo trạng thái, sản phẩm bán chạy, doanh thu 14 ngày gần nhất |
 
 ---
 
@@ -118,11 +96,11 @@ DWatch/
 
 | Trang | URL | Mô tả |
 |-------|-----|--------|
-| Trang chủ | `/home` | Sản phẩm, tìm kiếm, lọc danh mục |
+| Trang chủ | `/home` | Sản phẩm, tìm kiếm, lọc danh mục, phân trang |
 | Tìm kiếm | `/home?keyword=casio` | Theo tên/mô tả/thương hiệu |
 | Lọc danh mục | `/home?cat=1` | 1=Nam, 2=Nữ, 3=Đôi, 4=Smartwatch |
-| Chi tiết sản phẩm | `/product?id=1` | Thông tin, thêm giỏ, yêu thích, so sánh |
-| Giỏ hàng | `/cart` | Xem/sửa giỏ; form đặt hàng (cần đăng nhập) |
+| Chi tiết sản phẩm | `/product?id=1` | Thông tin, thêm giỏ, yêu thích, so sánh, đánh giá (`#reviews`) |
+| Giỏ hàng | `/cart` | Xem/sửa giỏ, áp dụng mã giảm giá; form đặt hàng (cần đăng nhập) |
 | Xác nhận đơn | `/orderConfirm?id=1` | Sau khi đặt hàng; hiện VietQR nếu chọn thanh toán QR |
 | Đăng nhập | `/login` | Có link "Quên mật khẩu?" |
 | Đăng ký | `/register` | Tạo tài khoản |
@@ -130,12 +108,15 @@ DWatch/
 | Đặt lại mật khẩu | `/resetPassword?token=xxx` | Form đổi mật khẩu (từ link email) |
 | Tra cứu đơn | `/orderLookup` | Mã đơn + SĐT/Email, không cần đăng nhập |
 | So sánh sản phẩm | `/compare` | Danh sách so sánh (tối đa 3); `?add=id` / `?remove=id` |
-| Lịch sử đơn | `/orders` | Danh sách đơn (cần đăng nhập) |
+| Lịch sử đơn | `/orders` | Danh sách đơn, phân trang (cần đăng nhập) |
 | Chi tiết đơn | `/orders?id=1` | Chi tiết đơn (cần đăng nhập) |
 | Yêu thích | `/wishlist` | Sản phẩm đã thích (cần đăng nhập) |
 | Cá nhân | `/profile` | Sửa thông tin, đổi mật khẩu (cần đăng nhập) |
-| Admin đăng nhập | `/admin/login` | **admin** / **admin123** |
+| Admin đăng nhập | `/admin/login` | Mặc định **admin** / **admin123** (nên đổi qua `.env`, xem phần Bảo mật) |
 | Admin sản phẩm | `/admin/products` | Thêm/sửa/xóa sản phẩm |
+| Admin đơn hàng | `/admin/orders` | Danh sách + cập nhật trạng thái đơn; `?status=pending` để lọc |
+| Admin mã giảm giá | `/admin/vouchers` | Thêm/sửa/vô hiệu hóa mã giảm giá |
+| Admin dashboard | `/admin/dashboard` | Doanh thu, đơn theo trạng thái, top sản phẩm |
 
 ---
 
@@ -143,18 +124,24 @@ DWatch/
 
 ### 1. Cấu hình database
 
-1. Mở **SQL Server Management Studio**, kết nối tới SQL Server.
-2. Chạy lần lượt:
-   - **`database.sql`** — tạo database `DWatchDB`, bảng, dữ liệu mẫu.
-   - **`database_add_payment_method.sql`** — nếu bảng `Orders` đã tồn tại nhưng chưa có cột `PaymentMethod`, `PaymentStatus`.
-   - **`database_password_reset.sql`** — tạo bảng `PasswordResetToken` (cho chức năng quên mật khẩu).
+Mở **SQL Server Management Studio**, kết nối tới SQL Server, chạy lần lượt (đúng thứ tự):
 
-### 2. Cấu hình kết nối DB và (tùy chọn) Email
+1. **`database.sql`** — tạo database `DWatchDB`, bảng, dữ liệu mẫu.
+2. **`database_add_payment_method.sql`** — nếu bảng `Orders` đã tồn tại nhưng chưa có cột `PaymentMethod`, `PaymentStatus`.
+3. **`database_password_reset.sql`** — tạo bảng `PasswordResetToken` (cho chức năng quên mật khẩu).
+4. **`database_order_status.sql`** — backfill trạng thái `pending` cho đơn cũ + index trên `Orders.Status`.
+5. **`database_reviews.sql`** — tạo bảng `Review` (đánh giá sản phẩm).
+6. **`database_vouchers.sql`** — tạo bảng `Voucher` + thêm cột `VoucherCode`, `DiscountAmount` vào `Orders`.
+
+Tất cả script đều dùng `IF NOT EXISTS` nên chạy lại nhiều lần vẫn an toàn.
+
+### 2. Cấu hình kết nối DB, admin và (tùy chọn) Email
 
 1. Copy **`.env.example`** thành **`.env`** (cùng thư mục với `pom.xml`).
 2. Trong **`.env`** điền:
    - `DB_SERVER`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` (bắt buộc).
-   - Để gửi email (xác nhận đơn, quên mật khẩu): cấu hình Gmail trong `EmailUtil.java` (FROM_EMAIL, APP_PASSWORD) hoặc dùng biến môi trường nếu bạn đã chỉnh code đọc từ env.
+   - `ADMIN_BOOTSTRAP_USER`, `ADMIN_BOOTSTRAP_PASSWORD` (tùy chọn) — nếu điền, ứng dụng tự tạo tài khoản admin này (mật khẩu băm bcrypt) khi khởi động nếu chưa tồn tại. Bỏ trống thì vẫn dùng được seed mặc định `admin/admin123` trong `database.sql`.
+   - `MAIL_FROM`, `MAIL_APP_PASSWORD`, `MAIL_FROM_NAME` (tùy chọn) — cấu hình Gmail SMTP để gửi email xác nhận đơn, đặt lại mật khẩu, thông báo đổi trạng thái. Không cấu hình thì email chỉ log lỗi, không làm hỏng chức năng khác.
 
 File **`.env`** nằm trong `.gitignore`, không bị đẩy lên Git.
 
@@ -172,13 +159,15 @@ Thay bằng **số tài khoản thật** của bạn để mã QR quét được
 
 - **SQL Server Configuration Manager** → Protocols → **TCP/IP** = Enabled, port **1433** → Restart SQL Server.
 
-### 5. Build và chạy
+### 5. Build, test và chạy
 
 ```bash
 cd DWatch    # thư mục chứa pom.xml
 mvn clean package
 ```
 
+- `mvn clean package` sẽ chạy bộ test JUnit 5 (`src/test/java`) trước khi đóng gói.
+- Chỉ chạy test: `mvn test`.
 - File WAR: **`target/DWatch.war`**.
 - Copy vào **`webapps`** của Tomcat, khởi động Tomcat.
 - Mở trình duyệt: **`http://localhost:8080/DWatch/`**
@@ -187,14 +176,21 @@ mvn clean package
 
 ---
 
-### Lưu ý bảo mật khi commit/push:
+## Bảo mật
 
-- **`.env`** đã nên có trong **`.gitignore`** → không bị push (mật khẩu DB, biến môi trường).
-- **`web.xml`** có thể chứa thông tin VietQR (số tài khoản mẫu); nếu dùng tài khoản thật, nên dùng biến môi trường hoặc file cấu hình ngoài, không commit tài khoản thật lên GitHub.
+- **Mật khẩu được băm bằng BCrypt** (thư viện `at.favre.lib:bcrypt`). Tài khoản tạo trước khi nâng cấp (mật khẩu thô) vẫn đăng nhập được bình thường và tự động được băm lại ngay khi đăng nhập thành công — không cần reset mật khẩu hàng loạt.
+- **CSRF token** theo phiên được gắn vào mọi form POST; request thiếu hoặc sai token bị từ chối với mã 403.
+- **Không hardcode secret trong source:** thông tin DB, tài khoản admin bootstrap, và Gmail SMTP đều đọc từ `.env` (xem `.env.example`) qua `AppConfig`.
+- **Cần làm ngay sau khi nâng cấp từ bản cũ:**
+  - Đổi mật khẩu admin mặc định (`admin/admin123`) — đăng nhập rồi đổi qua UI, hoặc cấu hình `ADMIN_BOOTSTRAP_USER`/`ADMIN_BOOTSTRAP_PASSWORD` với tài khoản khác.
+  - Nếu trước đây bạn đã commit Gmail App Password vào `EmailUtil.java`, **hãy thu hồi/tạo lại App Password đó trên tài khoản Google** — giá trị cũ không còn được dùng trong code nhưng vẫn tồn tại trong lịch sử Git.
+  - `web.xml` có thể chứa thông tin VietQR (số tài khoản mẫu); nếu dùng tài khoản thật, nên dùng biến môi trường hoặc file cấu hình ngoài, không commit tài khoản thật lên GitHub.
+  - `.env` đã có trong `.gitignore` → không bị push (mật khẩu DB, biến môi trường).
 
 ---
 
-## Hướng dẫn cách clone và chạy:
+## Hướng dẫn cách clone và chạy
+
 ```bash
 git clone https://github.com/TNL293107/DWatch.git
 cd DWatch
@@ -203,7 +199,7 @@ cd DWatch
 Sau đó:
 
 1. Tạo **`.env`** từ **`.env.example`**, điền `DB_SERVER`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`.
-2. Chạy **`database.sql`**, **`database_add_payment_method.sql`**, **`database_password_reset.sql`** trong SQL Server.
+2. Chạy lần lượt 6 script SQL theo thứ tự ở mục "Cài đặt & Chạy" (bước 1).
 3. (Tùy chọn) Sửa **`web.xml`** — VietQR: `vietqr_acq_id`, `vietqr_account_no`, `vietqr_account_name`.
 4. Build: **`mvn clean package`** → deploy **`target/DWatch.war`** lên Tomcat.
 5. Mở: **`http://localhost:8080/DWatch/`**
@@ -221,8 +217,17 @@ Sau đó:
 | Quên mật khẩu báo lỗi DB | Chạy **`database_password_reset.sql`** để tạo bảng `PasswordResetToken` |
 | Đặt hàng thất bại (lỗi cột) | Chạy **`database_add_payment_method.sql`** để thêm cột vào `Orders` |
 | Quét QR báo "tài khoản đã đóng" | Đổi `vietqr_*` trong `web.xml` sang **số tài khoản và ngân hàng thật** của bạn |
+| Trạng thái đơn luôn hiện "Chờ xử lý" | Chạy **`database_order_status.sql`** để backfill cột `Status` cho đơn cũ |
+| Không thấy phần đánh giá sản phẩm | Chạy **`database_reviews.sql`** để tạo bảng `Review` |
+| Áp mã giảm giá báo lỗi DB | Chạy **`database_vouchers.sql`** để tạo bảng `Voucher` và cột liên quan trong `Orders` |
+| Submit form báo lỗi 403 | Thiếu hoặc sai `csrfToken` — đảm bảo form có `<input type="hidden" name="csrfToken" value="${sessionScope.csrfToken}">` |
+| Không gửi được email | Kiểm tra `MAIL_FROM`, `MAIL_APP_PASSWORD` trong `.env` (dùng Gmail App Password, không dùng mật khẩu tài khoản thường) |
 
 ---
+
+## License
+
+Phát hành theo giấy phép [MIT](LICENSE).
 
 ## Liên kết
 
