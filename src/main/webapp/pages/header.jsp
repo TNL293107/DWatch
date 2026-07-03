@@ -42,7 +42,7 @@
 
         <!-- User Account -->
         <%
-            model.User loggedUser = (model.User) session.getAttribute("loggedUser");
+            com.dwatch.user.User loggedUser = (com.dwatch.user.User) session.getAttribute("loggedUser");
         %>
         <% if (loggedUser != null) { %>
             <a href="${pageContext.request.contextPath}/profile" class="user-btn">
