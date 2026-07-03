@@ -504,6 +504,23 @@ img { max-width: 100%; display: block; }
 .summary-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
 .total-row { border-bottom: none; font-size: 16px; padding-top: 14px; }
 .grand-total { color: var(--gold); font-size: 22px; }
+.voucher-row { color: var(--gold); }
+
+.voucher-box {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 14px;
+}
+.voucher-form { display: flex; gap: 8px; flex: 1; }
+.voucher-form .form-input { flex: 1; }
 
 .delivery-form {
   background: var(--bg-elevated);
@@ -919,6 +936,12 @@ img { max-width: 100%; display: block; }
   color: #ff8a80;
   border-color: rgba(229,57,53,.3);
 }
+.order-status.status-confirmed,
+.order-status.status-shipped {
+  background: rgba(66,165,245,.15);
+  color: #90caf9;
+  border-color: rgba(66,165,245,.3);
+}
 
 /* ---- Wishlist Button ---- */
 .btn-wishlist {
@@ -1061,6 +1084,22 @@ img { max-width: 100%; display: block; }
   border-top: 1px solid var(--border);
   margin-top: 40px;
 }
+
+/* ---- Product Reviews ---- */
+.reviews-section { padding: 40px 0 60px; border-top: 1px solid var(--border); margin-top: 40px; }
+.detail-rating { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; color: var(--gold); font-weight: 600; }
+.reviews-summary { display: flex; align-items: baseline; gap: 8px; margin-bottom: 20px; }
+.reviews-avg { font-size: 20px; font-weight: 700; color: var(--gold); }
+.reviews-count { color: var(--text-muted); font-size: 13px; }
+.review-form { max-width: 480px; margin-bottom: 32px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px; }
+.review-login-prompt { margin-bottom: 24px; font-size: 14px; }
+.review-list { display: flex; flex-direction: column; gap: 16px; }
+.review-item { border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; background: var(--bg-card); }
+.review-header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; flex-wrap: wrap; }
+.review-stars { color: var(--gold); letter-spacing: 2px; }
+.review-date { color: var(--text-muted); font-size: 12px; margin-left: auto; }
+.review-comment { color: var(--text); line-height: 1.7; font-size: 14px; }
+.empty-state-inline { color: var(--text-muted); font-size: 14px; }
 
 /* ---- Detail subtitle (Automatic, 39mm, Steel) ---- */
 .detail-subtitle {

@@ -108,3 +108,22 @@
   transition: all .2s;
 }
 .btn-delete:hover { background: #e53935; color: #fff; }
+
+/* ---- Admin Filter Bar (order/voucher status filters) ---- */
+.admin-filter-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+.admin-filter-bar .btn-outline.active { background: var(--gold, #c8a96e); color: #000; border-color: var(--gold, #c8a96e); }
+
+/* ---- Inline status-update form inside table cells ---- */
+.inline-status-form { display: flex; align-items: center; gap: 6px; }
+.inline-status-form select.form-input { padding: 6px 8px; font-size: 12px; }
+
+/* ---- Dashboard stat cards ---- */
+.stat-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.stat-card {
+  background: #1f1f1f;
+  border: 1px solid #2e2e2e;
+  border-radius: 8px;
+  padding: 20px;
+}
+.stat-card .stat-label { font-size: 13px; color: #999; margin-bottom: 8px; }
+.stat-card .stat-value { font-size: 26px; font-weight: 700; color: var(--gold, #c8a96e); }
