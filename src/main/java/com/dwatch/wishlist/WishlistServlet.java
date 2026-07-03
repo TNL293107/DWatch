@@ -1,8 +1,7 @@
-package servlet;
+package com.dwatch.wishlist;
 
-import dao.WishlistDAO;
-import model.Product;
-import model.User;
+import com.dwatch.product.Product;
+import com.dwatch.user.User;
 
 import javax.servlet.*;
 import javax.servlet.annotation.WebServlet;

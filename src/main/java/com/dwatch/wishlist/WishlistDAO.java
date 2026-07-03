@@ -1,7 +1,7 @@
-package dao;
+package com.dwatch.wishlist;
 
-import model.Product;
-import util.DBUtil;
+import com.dwatch.common.DBUtil;
+import com.dwatch.product.Product;
 
 import java.sql.*;
 import java.util.ArrayList;
