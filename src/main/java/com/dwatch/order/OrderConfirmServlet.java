@@ -1,9 +1,6 @@
-package servlet;
+package com.dwatch.order;
 
-import dao.OrderDAO;
-import model.Order;
-import model.OrderDetail;
-import util.VietQRUtil;
+import com.dwatch.common.VietQRUtil;
 
 import javax.servlet.*;
 import javax.servlet.annotation.WebServlet;

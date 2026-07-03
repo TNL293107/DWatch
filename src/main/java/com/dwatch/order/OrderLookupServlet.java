@@ -1,8 +1,4 @@
-package servlet;
-
-import dao.OrderDAO;
-import model.Order;
-import model.OrderDetail;
+package com.dwatch.order;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;

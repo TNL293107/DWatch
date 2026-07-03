@@ -1,4 +1,4 @@
-package model;
+package com.dwatch.order;
 
 public class OrderDetail {
     private int    orderDetailID;

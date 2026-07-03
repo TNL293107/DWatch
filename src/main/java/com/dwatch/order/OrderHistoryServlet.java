@@ -1,9 +1,7 @@
-package servlet;
+package com.dwatch.order;
 
-import dao.OrderDAO;
-import model.Order;
-import model.OrderDetail;
-import model.User;
+import com.dwatch.common.Pagination;
+import com.dwatch.user.User;
 
 import javax.servlet.*;
 import javax.servlet.annotation.WebServlet;
@@ -13,6 +11,8 @@ import java.util.List;
 
 @WebServlet("/orders")
 public class OrderHistoryServlet extends HttpServlet {
+
+    private static final int PAGE_SIZE = 10;
 
     private final OrderDAO orderDAO = new OrderDAO();
 
@@ -36,8 +36,13 @@ public class OrderHistoryServlet extends HttpServlet {
             req.setAttribute("details", details);
             req.getRequestDispatcher("/pages/orderDetail.jsp").forward(req, resp);
         } else {
-            List<Order> orders = orderDAO.getOrdersByEmail(user.getEmail());
+            int page = Pagination.parsePage(req.getParameter("page"));
+            int totalOrders = orderDAO.countOrdersByEmail(user.getEmail());
+            Pagination pagination = new Pagination(page, PAGE_SIZE, totalOrders);
+            List<Order> orders = orderDAO.getOrdersByEmail(user.getEmail(), pagination.getCurrentPage(), PAGE_SIZE);
             req.setAttribute("orders", orders);
+            req.setAttribute("currentPage", pagination.getCurrentPage());
+            req.setAttribute("totalPages", pagination.getTotalPages());
             req.getRequestDispatcher("/pages/orderHistory.jsp").forward(req, resp);
         }
     }
