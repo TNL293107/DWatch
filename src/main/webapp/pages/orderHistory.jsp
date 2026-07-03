@@ -47,8 +47,8 @@
                                         <fmt:formatNumber value="${o.totalAmount}" type="number" groupingUsed="true"/>₫
                                     </td>
                                     <td>
-                                        <span class="order-status status-${o.status != null ? o.status.toLowerCase().replace(' ','') : 'pending'}">
-                                            ${o.status != null ? o.status : 'Đang xử lý'}
+                                        <span class="order-status status-${empty o.status ? 'pending' : o.status}">
+                                            ${o.statusLabel}
                                         </span>
                                     </td>
                                     <td>
@@ -59,6 +59,21 @@
                             </c:forEach>
                         </tbody>
                     </table>
+
+                    <c:if test="${totalPages > 1}">
+                        <div class="pagination">
+                            <c:if test="${currentPage > 1}">
+                                <a href="${pageContext.request.contextPath}/orders?page=${currentPage - 1}" class="page-btn">‹</a>
+                            </c:if>
+                            <c:forEach begin="1" end="${totalPages}" var="i">
+                                <a href="${pageContext.request.contextPath}/orders?page=${i}"
+                                   class="page-btn ${i == currentPage ? 'active' : ''}">${i}</a>
+                            </c:forEach>
+                            <c:if test="${currentPage < totalPages}">
+                                <a href="${pageContext.request.contextPath}/orders?page=${currentPage + 1}" class="page-btn">›</a>
+                            </c:if>
+                        </div>
+                    </c:if>
                 </c:otherwise>
             </c:choose>
         </div>
