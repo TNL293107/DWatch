@@ -21,6 +21,7 @@
     <% } %>
 
     <form action="${pageContext.request.contextPath}/admin/login" method="post">
+        <input type="hidden" name="csrfToken" value="${sessionScope.csrfToken}">
         <div class="form-group">
             <label>Tên đăng nhập</label>
             <input type="text" name="username" required class="form-input"

@@ -12,6 +12,7 @@
 
         <c:if test="${not empty token}">
             <form action="${pageContext.request.contextPath}/resetPassword" method="post">
+                <input type="hidden" name="csrfToken" value="${sessionScope.csrfToken}">
                 <input type="hidden" name="token" value="${token}">
                 <div class="form-group">
                     <label>Mật khẩu mới *</label>
