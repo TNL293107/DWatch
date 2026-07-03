@@ -23,6 +23,38 @@
         <param-value>NGUYEN VAN A</param-value>
     </context-param>
 
+    <!-- Rate-limit login/register endpoints against brute-force guessing. Runs
+         first since it only reads IP/method/path, not POST params. -->
+    <filter>
+        <filter-name>RateLimitFilter</filter-name>
+        <filter-class>com.dwatch.common.RateLimitFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>RateLimitFilter</filter-name>
+        <url-pattern>/login</url-pattern>
+        <url-pattern>/register</url-pattern>
+        <url-pattern>/admin/login</url-pattern>
+    </filter-mapping>
+
+    <!-- Filter order matters: CharsetFilter must set UTF-8 before CsrfFilter reads POST params. -->
+    <filter>
+        <filter-name>CharsetFilter</filter-name>
+        <filter-class>com.dwatch.common.CharsetFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>CharsetFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+    <filter>
+        <filter-name>CsrfFilter</filter-name>
+        <filter-class>com.dwatch.common.CsrfFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>CsrfFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
     <!-- Default welcome page -->
     <welcome-file-list>
         <welcome-file>index.jsp</welcome-file>

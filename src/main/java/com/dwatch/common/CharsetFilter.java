@@ -1,14 +1,14 @@
-package servlet;
+package com.dwatch.common;
 
 import javax.servlet.*;
-import javax.servlet.annotation.WebFilter;
 import java.io.IOException;
 
 /**
  * CharsetFilter — ensures all requests and responses use UTF-8.
  * Essential for Vietnamese text support.
+ * Registered explicitly in web.xml (before CsrfFilter) so filter order is
+ * deterministic — encoding must be set before CsrfFilter reads POST params.
  */
-@WebFilter("/*")
 public class CharsetFilter implements Filter {
 
     private String encoding = "UTF-8";
