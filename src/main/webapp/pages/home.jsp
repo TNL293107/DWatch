@@ -93,6 +93,7 @@
                                     <fmt:formatNumber value="${p.price}" type="number" groupingUsed="true"/>₫
                                 </span>
                                 <form action="${pageContext.request.contextPath}/cart" method="post" style="display:inline">
+                                    <input type="hidden" name="csrfToken" value="${sessionScope.csrfToken}">
                                     <input type="hidden" name="action"    value="add">
                                     <input type="hidden" name="productID" value="${p.productID}">
                                     <input type="hidden" name="quantity"  value="1">
