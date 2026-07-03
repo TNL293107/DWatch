@@ -19,6 +19,9 @@
         <span class="admin-logo"><span class="logo-d">D</span><span class="logo-watch">WATCH</span> Admin</span>
         <nav>
             <a href="${pageContext.request.contextPath}/admin/products" class="admin-nav active">Sản Phẩm</a>
+            <a href="${pageContext.request.contextPath}/admin/orders" class="admin-nav">Đơn Hàng</a>
+            <a href="${pageContext.request.contextPath}/admin/vouchers" class="admin-nav">Mã Giảm Giá</a>
+            <a href="${pageContext.request.contextPath}/admin/dashboard" class="admin-nav">Thống Kê</a>
             <a href="${pageContext.request.contextPath}/home" class="admin-nav">← Trang Chủ</a>
         </nav>
     </div>
@@ -42,6 +45,7 @@
 
         <form action="${pageContext.request.contextPath}/admin/products"
               method="post" class="admin-form">
+            <input type="hidden" name="csrfToken" value="${sessionScope.csrfToken}">
 
             <c:if test="${not empty editProduct}">
                 <input type="hidden" name="productID"    value="${editProduct.productID}">
