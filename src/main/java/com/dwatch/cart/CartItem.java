@@ -1,4 +1,6 @@
-package model;
+package com.dwatch.cart;
+
+import com.dwatch.product.Product;
 
 public class CartItem {
     private Product product;

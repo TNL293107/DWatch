@@ -1,12 +1,14 @@
-package servlet;
+package com.dwatch.cart;
 
-import dao.OrderDAO;
-import dao.ProductDAO;
-import model.CartItem;
-import model.Order;
-import model.OrderDetail;
-import model.Product;
-import model.User;
+import com.dwatch.common.EmailUtil;
+import com.dwatch.order.Order;
+import com.dwatch.order.OrderDAO;
+import com.dwatch.order.OrderDetail;
+import com.dwatch.product.Product;
+import com.dwatch.product.ProductDAO;
+import com.dwatch.user.User;
+import com.dwatch.voucher.Voucher;
+import com.dwatch.voucher.VoucherDAO;
 
 import javax.servlet.*;
 import javax.servlet.annotation.WebServlet;
@@ -19,19 +21,23 @@ import java.util.*;
  * Requirement 4: manage shopping cart (add / remove / change qty / checkout).
  *
  * Actions (via 'action' param):
- *   add      — add product to cart
- *   remove   — remove a product line from cart
- *   update   — update all quantities from cart form
- *   checkout — save order to DB, clear cart, redirect to confirmation
- *   view     — show cart page (default GET)
+ *   add           — add product to cart
+ *   remove        — remove a product line from cart
+ *   update        — update all quantities from cart form
+ *   applyVoucher  — validate and apply a discount code to the cart
+ *   removeVoucher — remove the applied discount code
+ *   checkout      — save order to DB, clear cart, redirect to confirmation
+ *   view          — show cart page (default GET)
  */
 @WebServlet("/cart")
 public class CartServlet extends HttpServlet {
 
-    private static final String CART_KEY = "cart";
+    private static final String CART_KEY    = "cart";
+    private static final String VOUCHER_KEY = "appliedVoucher";
 
     private final ProductDAO productDAO = new ProductDAO();
     private final OrderDAO   orderDAO   = new OrderDAO();
+    private final VoucherDAO voucherDAO = new VoucherDAO();
 
     // ----------------------------------------------------------------
     // GET  → view cart or remove item (action=remove)
@@ -39,11 +45,15 @@ public class CartServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
-        if ("remove".equals(req.getParameter("action"))) {
-            doRemove(req, resp);
-            return;
+        try {
+            if ("remove".equals(req.getParameter("action"))) {
+                doRemove(req, resp);
+                return;
+            }
+            showCart(req, resp);
+        } catch (NumberFormatException e) {
+            resp.sendRedirect(req.getContextPath() + "/cart");
         }
-        showCart(req, resp);
     }
 
     // ----------------------------------------------------------------
@@ -57,12 +67,18 @@ public class CartServlet extends HttpServlet {
         String action = req.getParameter("action");
         if (action == null) action = "view";
 
-        switch (action) {
-            case "add":      doAdd(req, resp);      break;
-            case "remove":   doRemove(req, resp);   break;
-            case "update":   doUpdate(req, resp);   break;
-            case "checkout": doCheckout(req, resp); break;
-            default:         showCart(req, resp);
+        try {
+            switch (action) {
+                case "add":           doAdd(req, resp);           break;
+                case "remove":        doRemove(req, resp);        break;
+                case "update":        doUpdate(req, resp);        break;
+                case "applyVoucher":  doApplyVoucher(req, resp);  break;
+                case "removeVoucher": doRemoveVoucher(req, resp); break;
+                case "checkout":      doCheckout(req, resp);      break;
+                default:              showCart(req, resp);
+            }
+        } catch (NumberFormatException e) {
+            resp.sendRedirect(req.getContextPath() + "/cart");
         }
     }
 
@@ -132,6 +148,41 @@ public class CartServlet extends HttpServlet {
     }
 
     // ----------------------------------------------------------------
+    // APPLY / REMOVE voucher
+    // ----------------------------------------------------------------
+    private void doApplyVoucher(HttpServletRequest req, HttpServletResponse resp)
+            throws IOException, ServletException {
+
+        String code = req.getParameter("voucherCode");
+        double subtotal = cartSubtotal(getCart(req));
+        Voucher voucher = code != null ? voucherDAO.findValidByCode(code.trim()) : null;
+
+        if (voucher == null) {
+            req.setAttribute("error", "Mã giảm giá không hợp lệ hoặc đã hết hạn.");
+        } else if (voucher.getMinOrderAmount() != null && subtotal < voucher.getMinOrderAmount()) {
+            req.setAttribute("error", String.format(
+                "Đơn hàng cần tối thiểu %,.0f₫ để áp dụng mã này.", voucher.getMinOrderAmount()));
+        } else {
+            req.getSession().setAttribute(VOUCHER_KEY, voucher);
+            showCart(req, resp);
+            return;
+        }
+        showCart(req, resp);
+    }
+
+    private void doRemoveVoucher(HttpServletRequest req, HttpServletResponse resp)
+            throws IOException {
+        req.getSession().removeAttribute(VOUCHER_KEY);
+        resp.sendRedirect(req.getContextPath() + "/cart");
+    }
+
+    private double cartSubtotal(Map<Integer, CartItem> cart) {
+        double subtotal = 0;
+        for (CartItem item : cart.values()) subtotal += item.getSubtotal();
+        return subtotal;
+    }
+
+    // ----------------------------------------------------------------
     // CHECKOUT  — requires login; save to DB then clear cart
     // ----------------------------------------------------------------
     private void doCheckout(HttpServletRequest req, HttpServletResponse resp)
@@ -165,12 +216,12 @@ public class CartServlet extends HttpServlet {
         order.setPaymentStatus(Order.PAYMENT_STATUS_UNPAID); // Mới tạo đơn = Chưa thanh toán
         order.setUserID(loggedUser.getUserID());
 
-        // Calculate total & build details + HTML cho email
-        double total = 0;
+        // Calculate subtotal & build details + HTML cho email
+        double subtotal = 0;
         List<OrderDetail> details = new ArrayList<>();
         StringBuilder itemsHTML = new StringBuilder();
         for (CartItem item : cart.values()) {
-            total += item.getSubtotal();
+            subtotal += item.getSubtotal();
             details.add(new OrderDetail(0,
                 item.getProduct().getProductID(),
                 item.getQuantity(),
@@ -184,16 +235,34 @@ public class CartServlet extends HttpServlet {
                 item.getSubtotal()
             ));
         }
+
+        // Apply voucher (nếu có) trước khi lưu đơn
+        Voucher voucher = (Voucher) req.getSession().getAttribute(VOUCHER_KEY);
+        double discount = voucher != null ? voucherDAO.computeDiscount(voucher, subtotal) : 0;
+        double total = subtotal - discount;
+        if (voucher != null && discount > 0) {
+            order.setVoucherCode(voucher.getCode());
+            order.setDiscountAmount(discount);
+            itemsHTML.append(String.format(
+                "<tr><td style='padding:8px;color:#c9a84c'>Giảm giá (%s)</td>" +
+                "<td style='padding:8px;text-align:right;color:#c9a84c'>-%,.0f&#8363;</td></tr>",
+                voucher.getCode(), discount
+            ));
+        }
         order.setTotalAmount(total);
         order.setDetails(details);
 
         int orderID = orderDAO.saveOrder(order);
         if (orderID > 0) {
+            if (voucher != null && discount > 0) {
+                voucherDAO.incrementUsage(voucher.getVoucherID());
+                req.getSession().removeAttribute(VOUCHER_KEY);
+            }
             // Gửi email xác nhận nếu khách có nhập email
             String customerEmail = order.getEmail();
             if (customerEmail != null && !customerEmail.trim().isEmpty()) {
                 String paymentStatus = order.getPaymentStatus() != null ? order.getPaymentStatus() : Order.PAYMENT_STATUS_UNPAID;
-                util.EmailUtil.sendOrderConfirmation(
+                EmailUtil.sendOrderConfirmation(
                     customerEmail.trim(),
                     order.getFullName(),
                     orderID,
@@ -217,8 +286,16 @@ public class CartServlet extends HttpServlet {
     // ----------------------------------------------------------------
     private void showCart(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
-        req.setAttribute("cart", getCart(req));
+        Map<Integer, CartItem> cart = getCart(req);
+        req.setAttribute("cart", cart);
         req.setAttribute("loggedUser", req.getSession().getAttribute("loggedUser"));
+
+        Voucher voucher = (Voucher) req.getSession().getAttribute(VOUCHER_KEY);
+        if (voucher != null) {
+            double discount = voucherDAO.computeDiscount(voucher, cartSubtotal(cart));
+            req.setAttribute("appliedVoucher", voucher);
+            req.setAttribute("discountAmount", discount);
+        }
         req.getRequestDispatcher("/pages/cart.jsp").forward(req, resp);
     }
 
