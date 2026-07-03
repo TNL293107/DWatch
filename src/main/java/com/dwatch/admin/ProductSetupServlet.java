@@ -1,15 +1,13 @@
-package servlet;
+package com.dwatch.admin;
 
-import dao.CategoryDAO;
-import dao.ProductDAO;
-import model.Category;
-import model.Product;
+import com.dwatch.product.Category;
+import com.dwatch.product.CategoryDAO;
+import com.dwatch.product.Product;
+import com.dwatch.product.ProductDAO;
 
 import javax.servlet.*;
-import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
-import java.util.List;
 import java.io.IOException;
 /**
  * ProductSetupServlet — admin page to add/edit/delete products.
@@ -21,8 +19,6 @@ import java.io.IOException;
  */
 @WebServlet("/admin/products")
 public class ProductSetupServlet extends HttpServlet {
-
-    private static final String UPLOAD_DIR = "images";
 
     private final ProductDAO  productDAO  = new ProductDAO();
     private final CategoryDAO categoryDAO = new CategoryDAO();
