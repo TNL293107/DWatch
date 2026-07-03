@@ -19,7 +19,8 @@
                 <tr><td>Điện thoại:</td><td>${order.phone}</td></tr>
                 <tr><td>Email:</td>     <td>${order.email}</td></tr>
                 <tr><td>Địa chỉ:</td>  <td>${order.address}</td></tr>
-                <tr><td>Tình trạng đơn hàng:</td><td><strong>${not empty order.paymentStatus ? order.paymentStatus : 'Chưa thanh toán'}</strong></td></tr>
+                <tr><td>Tình trạng thanh toán:</td><td><strong>${not empty order.paymentStatus ? order.paymentStatus : 'Chưa thanh toán'}</strong></td></tr>
+                <tr><td>Trạng thái đơn hàng:</td><td><strong>${order.statusLabel}</strong></td></tr>
                 <c:if test="${not empty order.note}">
                     <tr><td>Ghi chú:</td><td>${order.note}</td></tr>
                 </c:if>

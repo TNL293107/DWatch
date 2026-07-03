@@ -29,7 +29,7 @@
                     <tr><td>Ghi chú</td><td>${order.note}</td></tr>
                     <tr><td>Ngày đặt</td><td><fmt:formatDate value="${order.orderDate}" pattern="dd/MM/yyyy HH:mm"/></td></tr>
                     <tr><td>Trạng thái</td>
-                        <td><span class="order-status">${order.status != null ? order.status : 'Đang xử lý'}</span></td>
+                        <td><span class="order-status status-${empty order.status ? 'pending' : order.status}">${order.statusLabel}</span></td>
                     </tr>
                 </table>
             </div>
