@@ -12,12 +12,14 @@
         <param-name>vietqr_acq_id</param-name>
         <param-value>970422</param-value>
     </context-param>
-    <!-- (2) vietqr_account_no = Số tài khoản nhận tiền (6–19 chữ số). -->
+    <!-- (2) vietqr_account_no = Số tài khoản nhận tiền (6–19 chữ số).
+         Thay bằng số tài khoản của bạn trước khi chạy. Không commit số thật. -->
     <context-param>
         <param-name>vietqr_account_no</param-name>
         <param-value>0000000000</param-value>
     </context-param>
-    <!-- (3) vietqr_account_name = Tên chủ tài khoản in trên sổ (nên không dấu). -->
+    <!-- (3) vietqr_account_name = Tên chủ tài khoản in trên sổ (nên không dấu).
+         Thay bằng tên chủ tài khoản của bạn trước khi chạy. -->
     <context-param>
         <param-name>vietqr_account_name</param-name>
         <param-value>NGUYEN VAN A</param-value>
