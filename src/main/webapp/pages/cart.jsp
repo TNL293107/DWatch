@@ -24,6 +24,7 @@
                 <!-- Cart Items Table -->
                 <div class="cart-items-col">
                     <form action="${pageContext.request.contextPath}/cart" method="post" id="cartForm">
+                        <input type="hidden" name="_csrf" value="${sessionScope.csrfToken}">
                         <input type="hidden" name="action" value="update">
                         <table class="cart-table">
                             <thead>
@@ -116,6 +117,7 @@
                             <div class="delivery-form">
                                 <h3>Thông Tin Giao Hàng</h3>
                                 <form action="${pageContext.request.contextPath}/cart" method="post" id="checkoutForm">
+                                    <input type="hidden" name="_csrf" value="${sessionScope.csrfToken}">
                                     <input type="hidden" name="action" value="checkout">
 
                                     <div class="form-group">

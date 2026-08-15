@@ -38,24 +38,15 @@ public class ProductSetupServlet extends HttpServlet {
             resp.sendRedirect(req.getContextPath() + "/admin/login");
             return;
         }
-        String action = req.getParameter("action");
-        if ("edit".equals(action)) {
+        // Xóa sản phẩm chỉ nhận qua POST (xem doPost) để CsrfFilter kiểm tra được token —
+        // link GET trước đây có thể bị kích hoạt từ site khác bằng một thẻ <img>.
+        if ("edit".equals(req.getParameter("action"))) {
             Integer id = parseInteger(req.getParameter("id"));
             if (id == null || id <= 0) {
                 resp.sendRedirect(req.getContextPath() + "/admin/products?msg=invalid");
                 return;
             }
             req.setAttribute("editProduct", productDAO.getProductByID(id));
-        }
-        if ("delete".equals(action)) {
-            Integer id = parseInteger(req.getParameter("id"));
-            if (id == null || id <= 0) {
-                resp.sendRedirect(req.getContextPath() + "/admin/products?msg=invalid");
-                return;
-            }
-            productDAO.deleteProduct(id);
-            resp.sendRedirect(req.getContextPath() + "/admin/products?msg=deleted");
-            return;
         }
 
         req.setAttribute("products",   productDAO.getAllProducts());
@@ -75,6 +66,17 @@ public class ProductSetupServlet extends HttpServlet {
             return;
         }
         req.setCharacterEncoding("UTF-8");
+
+        if ("delete".equals(req.getParameter("action"))) {
+            Integer id = parseInteger(req.getParameter("productID"));
+            if (id == null || id <= 0) {
+                resp.sendRedirect(req.getContextPath() + "/admin/products?msg=invalid");
+                return;
+            }
+            productDAO.deleteProduct(id);
+            resp.sendRedirect(req.getContextPath() + "/admin/products?msg=deleted");
+            return;
+        }
 
         Product p = new Product();
         String idParam = req.getParameter("productID");

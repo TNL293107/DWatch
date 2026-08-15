@@ -1,2 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Context path="/DWatch"/>
+<Context path="/DWatch">
+    <!-- SameSite=Lax: trình duyệt không gửi session cookie theo request POST từ site khác,
+         là lớp phòng thủ thứ hai bên cạnh CSRF token của servlet.CsrfFilter. -->
+    <CookieProcessor className="org.apache.tomcat.util.http.Rfc6265CookieProcessor"
+                     sameSiteCookies="Lax"/>
+</Context>

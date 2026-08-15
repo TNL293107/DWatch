@@ -1,17 +1,27 @@
 package servlet;
 
-import dao.UserDAO;
 import model.User;
+import service.AuthService;
+import service.ServiceResult;
+import service.UserService;
+import util.CsrfUtil;
 
 import javax.servlet.*;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
 import java.io.IOException;
 
+/**
+ * UserServlet — điều hướng cho đăng nhập / đăng ký / đăng xuất / trang cá nhân.
+ *
+ * <p>Servlet chỉ đọc tham số request và chọn view; toàn bộ nghiệp vụ xác thực
+ * nằm ở {@link AuthService}.
+ */
 @WebServlet(urlPatterns = {"/login", "/register", "/logout", "/profile"})
 public class UserServlet extends HttpServlet {
 
-    private final UserDAO userDAO = new UserDAO();
+    private final AuthService authService = new AuthService();
+    private final UserService userService = new UserService();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
@@ -25,7 +35,7 @@ public class UserServlet extends HttpServlet {
                 req.getRequestDispatcher("/pages/register.jsp").forward(req, resp);
                 break;
             case "/logout":
-                req.getSession().removeAttribute("loggedUser");
+                doLogout(req);
                 resp.sendRedirect(req.getContextPath() + "/home");
                 break;
             case "/profile":
@@ -58,61 +68,35 @@ public class UserServlet extends HttpServlet {
 
     private void doLogin(HttpServletRequest req, HttpServletResponse resp)
             throws IOException, ServletException {
-        String email    = req.getParameter("email");
-        String password = req.getParameter("password");
-        if (email != null) email = email.trim();
+        ServiceResult result = authService.login(
+                req.getParameter("email"),
+                req.getParameter("password"));
 
-        if (email == null || email.isEmpty() || password == null || password.isEmpty()) {
-            req.setAttribute("error", "Vui lòng nhập email và mật khẩu.");
+        if (!result.success()) {
+            req.setAttribute("error", result.errorMessage());
             req.getRequestDispatcher("/pages/login.jsp").forward(req, resp);
             return;
         }
-
-        User user = userDAO.login(email, password);
-        if (user != null) {
-            req.getSession().setAttribute("loggedUser", user);
-            resp.sendRedirect(resolveSafeRedirect(req, req.getParameter("redirect"),
-                    req.getContextPath() + "/home"));
-        } else {
-            req.setAttribute("error", "Email hoặc mật khẩu không đúng.");
-            req.getRequestDispatcher("/pages/login.jsp").forward(req, resp);
-        }
+        startAuthenticatedSession(req, result.user());
+        redirectAfterAuth(req, resp);
     }
 
     private void doRegister(HttpServletRequest req, HttpServletResponse resp)
             throws IOException, ServletException {
-        String fullName  = req.getParameter("fullName");
-        String email     = req.getParameter("email");
-        String password  = req.getParameter("password");
-        String password2 = req.getParameter("password2");
-        String phone     = req.getParameter("phone");
+        ServiceResult result = authService.register(
+                req.getParameter("fullName"),
+                req.getParameter("email"),
+                req.getParameter("password"),
+                req.getParameter("password2"),
+                req.getParameter("phone"));
 
-        if (password == null || password2 == null || !password.equals(password2)) {
-            req.setAttribute("error", "Mật khẩu xác nhận không khớp.");
+        if (!result.success()) {
+            req.setAttribute("error", result.errorMessage());
             req.getRequestDispatcher("/pages/register.jsp").forward(req, resp);
             return;
         }
-        if (userDAO.emailExists(email)) {
-            req.setAttribute("error", "Email này đã được đăng ký.");
-            req.getRequestDispatcher("/pages/register.jsp").forward(req, resp);
-            return;
-        }
-        User user = new User();
-        user.setFullName(fullName);
-        user.setEmail(email);
-        user.setPassword(password);
-        user.setPhone(phone);
-
-        int id = userDAO.register(user);
-        if (id > 0) {
-            user.setUserID(id);
-            req.getSession().setAttribute("loggedUser", user);
-            resp.sendRedirect(resolveSafeRedirect(req, req.getParameter("redirect"),
-                    req.getContextPath() + "/home"));
-        } else {
-            req.setAttribute("error", "Đăng ký thất bại. Vui lòng thử lại.");
-            req.getRequestDispatcher("/pages/register.jsp").forward(req, resp);
-        }
+        startAuthenticatedSession(req, result.user());
+        redirectAfterAuth(req, resp);
     }
 
     private void doProfile(HttpServletRequest req, HttpServletResponse resp)
@@ -122,40 +106,67 @@ public class UserServlet extends HttpServlet {
             resp.sendRedirect(req.getContextPath() + "/login");
             return;
         }
-        String action = req.getParameter("action");
 
-        if ("changePassword".equals(action)) {
-            String oldPass = req.getParameter("oldPassword");
-            String newPass = req.getParameter("newPassword");
-            String newPass2 = req.getParameter("newPassword2");
-            if (newPass == null || newPass2 == null || !newPass.equals(newPass2)) {
-                req.setAttribute("error", "Mật khẩu mới không khớp.");
-            } else if (oldPass == null || oldPass.isEmpty()) {
-                req.setAttribute("error", "Vui lòng nhập mật khẩu cũ.");
-            } else if (userDAO.changePassword(loggedUser.getUserID(), oldPass, newPass)) {
+        if ("changePassword".equals(req.getParameter("action"))) {
+            ServiceResult result = authService.changePassword(
+                    loggedUser.getUserID(),
+                    req.getParameter("oldPassword"),
+                    req.getParameter("newPassword"),
+                    req.getParameter("newPassword2"));
+            if (result.success()) {
                 req.setAttribute("success", "Đổi mật khẩu thành công.");
             } else {
-                req.setAttribute("error", "Mật khẩu cũ không đúng.");
+                req.setAttribute("error", result.errorMessage());
             }
         } else {
-            loggedUser.setFullName(req.getParameter("fullName"));
-            loggedUser.setPhone(req.getParameter("phone"));
-            loggedUser.setAddress(req.getParameter("address"));
-            if (userDAO.updateProfile(loggedUser)) {
-                req.getSession().setAttribute("loggedUser", loggedUser);
-                req.setAttribute("success", "Cập nhật thông tin thành công.");
-            } else {
-                req.setAttribute("error", "Cập nhật thất bại.");
-            }
+            updateProfile(req, loggedUser);
         }
         req.getRequestDispatcher("/pages/profile.jsp").forward(req, resp);
     }
 
-    private boolean isLoggedIn(HttpServletRequest req) {
-        return req.getSession(false) != null &&
-               req.getSession().getAttribute("loggedUser") != null;
+    private void updateProfile(HttpServletRequest req, User loggedUser) {
+        ServiceResult result = userService.updateProfile(
+                loggedUser,
+                req.getParameter("fullName"),
+                req.getParameter("phone"),
+                req.getParameter("address"));
+        if (result.success()) {
+            req.getSession().setAttribute("loggedUser", result.user());
+            req.setAttribute("success", "Cập nhật thông tin thành công.");
+        } else {
+            req.setAttribute("error", result.errorMessage());
+        }
     }
 
+    /** Cấp session mới sau khi xác thực để chống session fixation. */
+    private void startAuthenticatedSession(HttpServletRequest req, User user) {
+        req.getSession(true);
+        req.changeSessionId();
+        HttpSession session = req.getSession();
+        session.setAttribute("loggedUser", user);
+        CsrfUtil.rotateToken(session);
+    }
+
+    private void doLogout(HttpServletRequest req) {
+        HttpSession session = req.getSession(false);
+        if (session == null) {
+            return;
+        }
+        session.removeAttribute("loggedUser");
+        req.changeSessionId();
+        CsrfUtil.rotateToken(session);
+    }
+
+    private void redirectAfterAuth(HttpServletRequest req, HttpServletResponse resp)
+            throws IOException {
+        resp.sendRedirect(resolveSafeRedirect(req, req.getParameter("redirect"),
+                req.getContextPath() + "/home"));
+    }
+
+    /**
+     * Chỉ nhận đường dẫn nội bộ nằm trong context path — chặn open redirect sang site khác
+     * và chặn CRLF injection vào header Location.
+     */
     private String resolveSafeRedirect(HttpServletRequest req, String redirect, String fallback) {
         if (redirect == null) return fallback;
         String target = redirect.trim();
@@ -170,5 +181,10 @@ public class UserServlet extends HttpServlet {
         if (ctx == null || ctx.isEmpty()) return target;
         if (target.equals(ctx) || target.startsWith(ctx + "/")) return target;
         return fallback;
+    }
+
+    private boolean isLoggedIn(HttpServletRequest req) {
+        HttpSession session = req.getSession(false);
+        return session != null && session.getAttribute("loggedUser") != null;
     }
 }

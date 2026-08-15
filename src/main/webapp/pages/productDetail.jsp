@@ -61,6 +61,7 @@
 
             <!-- Add to Cart Form -->
             <form action="${pageContext.request.contextPath}/cart" method="post" class="atc-form">
+                <input type="hidden" name="_csrf" value="${sessionScope.csrfToken}">
                 <input type="hidden" name="action"    value="add">
                 <input type="hidden" name="productID" value="${product.productID}">
                 <div class="qty-row">
@@ -93,6 +94,7 @@
                 }
             %>
             <form action="${pageContext.request.contextPath}/wishlist" method="post" style="margin-bottom:16px">
+                <input type="hidden" name="_csrf" value="${sessionScope.csrfToken}">
                 <input type="hidden" name="productID" value="${product.productID}">
                 <input type="hidden" name="action" value="<%= isWishlisted ? "remove" : "add" %>">
                 <button type="submit" class="btn-wishlist <%= isWishlisted ? "wishlisted" : "" %>">
@@ -147,6 +149,7 @@ function changeQty(delta) {
                             <fmt:formatNumber value="${p.price}" type="number" groupingUsed="true"/>₫
                         </span>
                         <form action="${pageContext.request.contextPath}/cart" method="post" style="display:inline">
+                            <input type="hidden" name="_csrf" value="${sessionScope.csrfToken}">
                             <input type="hidden" name="action"    value="add">
                             <input type="hidden" name="productID" value="${p.productID}">
                             <input type="hidden" name="quantity"  value="1">

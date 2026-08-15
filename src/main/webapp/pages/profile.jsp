@@ -30,6 +30,7 @@
             <div class="profile-panel">
                 <h3>Thông Tin Cá Nhân</h3>
                 <form action="${pageContext.request.contextPath}/profile" method="post">
+                    <input type="hidden" name="_csrf" value="${sessionScope.csrfToken}">
                     <input type="hidden" name="action" value="updateProfile">
                     <div class="admin-form-grid">
                         <div class="form-group">
@@ -58,6 +59,7 @@
             <div class="profile-panel" style="margin-top:24px">
                 <h3>Đổi Mật Khẩu</h3>
                 <form action="${pageContext.request.contextPath}/profile" method="post">
+                    <input type="hidden" name="_csrf" value="${sessionScope.csrfToken}">
                     <input type="hidden" name="action" value="changePassword">
                     <div class="admin-form-grid">
                         <div class="form-group">

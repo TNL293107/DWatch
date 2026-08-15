@@ -12,6 +12,7 @@
         </c:if>
 
         <form action="${pageContext.request.contextPath}/orderLookup" method="post">
+            <input type="hidden" name="_csrf" value="${sessionScope.csrfToken}">
             <div class="form-group">
                 <label>Mã đơn hàng *</label>
                 <input type="text" name="orderId" required class="form-input"

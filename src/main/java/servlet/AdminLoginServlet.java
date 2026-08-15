@@ -1,19 +1,24 @@
 package servlet;
 
-import util.DBUtil;
+import service.AdminAuthService;
+import util.CsrfUtil;
 
 import javax.servlet.*;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
 import java.io.IOException;
-import java.sql.*;
 
 /**
- * AdminLoginServlet — simple admin authentication.
- * Default credentials set in database.sql: admin / admin123
+ * AdminLoginServlet — đăng nhập quản trị.
+ *
+ * <p>Mật khẩu được xác thực bằng BCrypt trong {@link AdminAuthService}. Bản ghi seed
+ * plaintext trong database.sql sẽ tự động được băm lại sau lần đăng nhập đúng đầu tiên
+ * (xem database_password_hash.sql).
  */
 @WebServlet("/admin/login")
 public class AdminLoginServlet extends HttpServlet {
+
+    private final AdminAuthService adminAuthService = new AdminAuthService();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
@@ -29,29 +34,20 @@ public class AdminLoginServlet extends HttpServlet {
         String username = req.getParameter("username");
         String password = req.getParameter("password");
 
-        if (authenticate(username, password)) {
-            HttpSession session = req.getSession(true);
-            session.setAttribute("adminLoggedIn", Boolean.TRUE);
-            session.setAttribute("adminUser", username);
-            resp.sendRedirect(req.getContextPath() + "/admin/products");
-        } else {
+        if (!adminAuthService.authenticate(username, password)) {
             req.setAttribute("error", "Sai tên đăng nhập hoặc mật khẩu.");
             req.getRequestDispatcher("/pages/adminLogin.jsp").forward(req, resp);
+            return;
         }
-    }
 
-    private boolean authenticate(String username, String password) {
-        String sql = "SELECT 1 FROM Admin WHERE Username = ? AND Password = ?";
-        try (Connection cn = DBUtil.getConnection();
-             PreparedStatement ps = cn.prepareStatement(sql)) {
-            ps.setString(1, username);
-            ps.setString(2, password);
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next();
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
+        // Cấp session mới sau khi xác thực để chống session fixation.
+        req.getSession(true);
+        req.changeSessionId();
+        HttpSession session = req.getSession();
+        session.setAttribute("adminLoggedIn", Boolean.TRUE);
+        session.setAttribute("adminUser", username);
+        CsrfUtil.rotateToken(session);
+
+        resp.sendRedirect(req.getContextPath() + "/admin/products");
     }
 }

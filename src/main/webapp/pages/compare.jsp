@@ -85,6 +85,7 @@
                                 <td class="compare-value">
                                     <a href="${pageContext.request.contextPath}/product?id=${p.productID}" class="btn-outline btn-sm">Xem chi tiết</a>
                                     <form action="${pageContext.request.contextPath}/cart" method="post" style="display:inline;margin-left:8px">
+                                        <input type="hidden" name="_csrf" value="${sessionScope.csrfToken}">
                                         <input type="hidden" name="action" value="add">
                                         <input type="hidden" name="productID" value="${p.productID}">
                                         <input type="hidden" name="quantity" value="1">
