@@ -1,28 +1,5 @@
 // DWatch — Main JavaScript
 
-// #region agent log
-fetch('http://127.0.0.1:7503/ingest/67d8cee0-149e-4d2f-a684-5c7c0c390e8a', {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json',
-        'X-Debug-Session-Id': 'b721a2'
-    },
-    body: JSON.stringify({
-        sessionId: 'b721a2',
-        runId: 'pre-fix',
-        hypothesisId: 'H1',
-        location: 'js/script.js:4',
-        message: 'script loaded and DOM state',
-        data: {
-            href: window.location.href,
-            pathname: window.location.pathname,
-            imgCount: document.querySelectorAll('img').length
-        },
-        timestamp: Date.now()
-    })
-}).catch(() => {});
-// #endregion
-
 // Auto-submit cart quantity changes
 document.querySelectorAll('.qty-box').forEach(input => {
     input.addEventListener('change', function () {
@@ -55,28 +32,6 @@ if (heroBtn) {
 
 // Toast notification (used after add to cart)
 function showToast(msg, type) {
-    // #region agent log
-    fetch('http://127.0.0.1:7503/ingest/67d8cee0-149e-4d2f-a684-5c7c0c390e8a', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-Debug-Session-Id': 'b721a2'
-        },
-        body: JSON.stringify({
-            sessionId: 'b721a2',
-            runId: 'pre-fix',
-            hypothesisId: 'H3',
-            location: 'js/script.js:40',
-            message: 'showToast called',
-            data: {
-                msg,
-                type
-            },
-            timestamp: Date.now()
-        })
-    }).catch(() => {});
-    // #endregion
-
     const toast = document.createElement('div');
     toast.style.cssText = `
         position: fixed; bottom: 30px; right: 30px; z-index: 9999;
