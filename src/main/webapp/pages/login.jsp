@@ -14,6 +14,7 @@
         </c:if>
 
         <form action="${pageContext.request.contextPath}/login" method="post">
+            <input type="hidden" name="_csrf" value="${sessionScope.csrfToken}">
             <input type="hidden" name="redirect" value="${param.redirect}">
             <div class="form-group">
                 <label>Email *</label>

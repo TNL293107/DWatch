@@ -5,9 +5,16 @@ import util.DBUtil;
 
 import java.sql.*;
 
+/**
+ * UserDAO — truy cập dữ liệu bảng Users và PasswordResetToken.
+ *
+ * <p>Lớp này chỉ đọc/ghi dữ liệu. Mọi nghiệp vụ liên quan tới mật khẩu (băm, xác thực,
+ * kiểm tra độ mạnh) nằm ở {@code service.AuthService} — giá trị {@code Password} truyền
+ * vào đây phải là hash đã được băm sẵn.
+ */
 public class UserDAO {
 
-    /** Đăng ký tài khoản mới. Trả về UserID hoặc -1 nếu lỗi */
+    /** Đăng ký tài khoản mới; {@code user.getPassword()} phải là hash. Trả về UserID hoặc -1 nếu lỗi */
     public int register(User user) {
         String sql = "INSERT INTO Users (FullName, Email, Password, Phone, Address) VALUES (?,?,?,?,?)";
         try (Connection cn = DBUtil.getConnection();
@@ -25,13 +32,12 @@ public class UserDAO {
         return -1;
     }
 
-    /** Đăng nhập. Trả về User nếu đúng, null nếu sai */
-    public User login(String email, String password) {
-        String sql = "SELECT * FROM Users WHERE Email = ? AND Password = ?";
+    /** Tìm user theo ID (kèm hash mật khẩu, dùng khi đổi mật khẩu) */
+    public User findById(int userID) {
+        String sql = "SELECT * FROM Users WHERE UserID = ?";
         try (Connection cn = DBUtil.getConnection();
              PreparedStatement ps = cn.prepareStatement(sql)) {
-            ps.setString(1, email);
-            ps.setString(2, password);
+            ps.setInt(1, userID);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return mapUser(rs);
             }
@@ -66,14 +72,13 @@ public class UserDAO {
         return false;
     }
 
-    /** Đổi mật khẩu */
-    public boolean changePassword(int userID, String oldPass, String newPass) {
-        String sql = "UPDATE Users SET Password=? WHERE UserID=? AND Password=?";
+    /** Ghi đè hash mật khẩu theo UserID. Việc xác thực mật khẩu cũ do service layer đảm nhiệm. */
+    public boolean updatePasswordById(int userID, String passwordHash) {
+        String sql = "UPDATE Users SET Password=? WHERE UserID=?";
         try (Connection cn = DBUtil.getConnection();
              PreparedStatement ps = cn.prepareStatement(sql)) {
-            ps.setString(1, newPass);
+            ps.setString(1, passwordHash);
             ps.setInt(2, userID);
-            ps.setString(3, oldPass);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) { e.printStackTrace(); }
         return false;
@@ -92,12 +97,12 @@ public class UserDAO {
         return null;
     }
 
-    /** Đặt lại mật khẩu theo email (sau khi xác thực token) */
-    public boolean updatePasswordByEmail(String email, String newPassword) {
+    /** Đặt lại hash mật khẩu theo email (sau khi xác thực token) */
+    public boolean updatePasswordByEmail(String email, String passwordHash) {
         String sql = "UPDATE Users SET Password = ? WHERE Email = ?";
         try (Connection cn = DBUtil.getConnection();
              PreparedStatement ps = cn.prepareStatement(sql)) {
-            ps.setString(1, newPassword);
+            ps.setString(1, passwordHash);
             ps.setString(2, email);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) { e.printStackTrace(); }

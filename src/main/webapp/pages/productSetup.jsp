@@ -42,6 +42,7 @@
 
         <form action="${pageContext.request.contextPath}/admin/products"
               method="post" class="admin-form">
+            <input type="hidden" name="_csrf" value="${sessionScope.csrfToken}">
 
             <c:if test="${not empty editProduct}">
                 <input type="hidden" name="productID"    value="${editProduct.productID}">
@@ -166,9 +167,14 @@
                             <td class="action-cell">
                                 <a href="${pageContext.request.contextPath}/admin/products?action=edit&id=${p.productID}"
                                    class="btn-edit">✏ Sửa</a>
-                                <a href="${pageContext.request.contextPath}/admin/products?action=delete&id=${p.productID}"
-                                   class="btn-delete"
-                                   onclick="return confirm('Xác nhận xóa sản phẩm này?')">🗑 Xóa</a>
+                                <form action="${pageContext.request.contextPath}/admin/products"
+                                      method="post" style="display:inline"
+                                      onsubmit="return confirm('Xác nhận xóa sản phẩm này?')">
+                                    <input type="hidden" name="_csrf" value="${sessionScope.csrfToken}">
+                                    <input type="hidden" name="action" value="delete">
+                                    <input type="hidden" name="productID" value="${p.productID}">
+                                    <button type="submit" class="btn-delete">🗑 Xóa</button>
+                                </form>
                             </td>
                         </tr>
                     </c:forEach>
