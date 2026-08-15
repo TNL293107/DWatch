@@ -56,7 +56,13 @@ public class UserServlet extends HttpServlet {
         switch (path) {
             case "/login":    doLogin(req, resp);    break;
             case "/register": doRegister(req, resp); break;
-            case "/profile":  doProfile(req, resp);  break;
+            case "/profile":
+                if (!isLoggedIn(req)) {
+                    resp.sendRedirect(req.getContextPath() + "/login");
+                    return;
+                }
+                doProfile(req, resp);
+                break;
         }
     }
 
@@ -151,17 +157,30 @@ public class UserServlet extends HttpServlet {
         CsrfUtil.rotateToken(session);
     }
 
-    /**
-     * Chỉ nhận đường dẫn nội bộ cho tham số redirect — chặn open redirect sang site khác.
-     */
     private void redirectAfterAuth(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
-        String redirect = req.getParameter("redirect");
-        if (redirect != null && redirect.startsWith("/") && !redirect.startsWith("//")) {
-            resp.sendRedirect(redirect);
-            return;
+        resp.sendRedirect(resolveSafeRedirect(req, req.getParameter("redirect"),
+                req.getContextPath() + "/home"));
+    }
+
+    /**
+     * Chỉ nhận đường dẫn nội bộ nằm trong context path — chặn open redirect sang site khác
+     * và chặn CRLF injection vào header Location.
+     */
+    private String resolveSafeRedirect(HttpServletRequest req, String redirect, String fallback) {
+        if (redirect == null) return fallback;
+        String target = redirect.trim();
+        if (target.isEmpty()) return fallback;
+        if (target.contains("\r") || target.contains("\n")) return fallback;
+        if (target.startsWith("http://") || target.startsWith("https://") || target.startsWith("//")) {
+            return fallback;
         }
-        resp.sendRedirect(req.getContextPath() + "/home");
+        if (!target.startsWith("/")) return fallback;
+
+        String ctx = req.getContextPath();
+        if (ctx == null || ctx.isEmpty()) return target;
+        if (target.equals(ctx) || target.startsWith(ctx + "/")) return target;
+        return fallback;
     }
 
     private boolean isLoggedIn(HttpServletRequest req) {

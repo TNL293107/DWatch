@@ -141,6 +141,18 @@ class AuthServiceTest {
 
             verifyNoInteractions(userDAO);
         }
+
+        @Test
+        @DisplayName("bỏ trống ô nhập báo lỗi riêng, không dùng chung thông báo sai mật khẩu")
+        void login_blankInputHasItsOwnMessage() {
+            when(userDAO.findByEmail(EMAIL))
+                    .thenReturn(userWithStoredPassword(PasswordUtil.hash(PASSWORD)));
+
+            String blankError = authService.login("", "").errorMessage();
+            String wrongPasswordError = authService.login(EMAIL, "sai-mat-khau").errorMessage();
+
+            assertNotEquals(blankError, wrongPasswordError);
+        }
     }
 
     @Nested
@@ -239,6 +251,16 @@ class AuthServiceTest {
 
             assertFalse(result.success());
             verify(userDAO, never()).updatePasswordById(anyInt(), anyString());
+        }
+
+        @Test
+        @DisplayName("bỏ trống mật khẩu cũ bị chặn trước khi chạm DB")
+        void changePassword_rejectsBlankOldPassword() {
+            ServiceResult result =
+                    authService.changePassword(7, "", "MatKhauMoi@1", "MatKhauMoi@1");
+
+            assertFalse(result.success());
+            verifyNoInteractions(userDAO);
         }
 
         @Test

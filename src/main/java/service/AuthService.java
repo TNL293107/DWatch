@@ -38,7 +38,9 @@ public class AuthService {
     public ServiceResult login(String email, String rawPassword) {
         String normalizedEmail = normalizeEmail(email);
         if (normalizedEmail.isEmpty() || rawPassword == null || rawPassword.isEmpty()) {
-            return ServiceResult.error(INVALID_CREDENTIALS);
+            // Bỏ trống ô nhập không liên quan tới việc tài khoản có tồn tại hay không,
+            // nên thông báo cụ thể ở đây không làm lộ thêm thông tin gì.
+            return ServiceResult.error("Vui lòng nhập email và mật khẩu.");
         }
         User user = userDAO.findByEmail(normalizedEmail);
         if (user == null || !PasswordUtil.verify(rawPassword, user.getPassword())) {
@@ -83,6 +85,9 @@ public class AuthService {
     /** Đổi mật khẩu khi đã đăng nhập; hash cũ được đọc lại từ DB thay vì tin vào session. */
     public ServiceResult changePassword(int userID, String oldPassword,
                                      String newPassword, String confirmation) {
+        if (oldPassword == null || oldPassword.isEmpty()) {
+            return ServiceResult.error("Vui lòng nhập mật khẩu cũ.");
+        }
         User current = userDAO.findById(userID);
         if (current == null) {
             return ServiceResult.error("Không tìm thấy tài khoản.");
