@@ -27,10 +27,13 @@ DWatch/
 ├── database.sql          ← script tạo DB và bảng chính
 ├── database_add_payment_method.sql
 ├── database_password_reset.sql
+├── database_password_hash.sql   ← migrate mật khẩu plaintext sang BCrypt
 ├── README.md
+├── src/test/java/               ← unit test (JUnit 5 + Mockito): chạy bằng `mvn test`
 └── src/main/
     ├── java/
     │   ├── dao/
+    │   │   ├── AdminDAO.java
     │   │   ├── CategoryDAO.java
     │   │   ├── OrderDAO.java
     │   │   ├── ProductDAO.java
@@ -43,10 +46,18 @@ DWatch/
     │   │   ├── OrderDetail.java
     │   │   ├── Product.java
     │   │   └── User.java
+    │   ├── service/                     ← tầng nghiệp vụ (servlet không còn chứa business logic)
+    │   │   ├── AdminAuthService.java
+    │   │   ├── AuthService.java         ← đăng nhập/đăng ký/đổi & đặt lại mật khẩu
+    │   │   ├── PasswordPolicy.java
+    │   │   ├── PasswordResetTicket.java
+    │   │   ├── ServiceResult.java
+    │   │   └── UserService.java
     │   ├── servlet/
     │   │   ├── AdminLoginServlet.java
     │   │   ├── CartServlet.java
     │   │   ├── CharsetFilter.java
+    │   │   ├── CsrfFilter.java          ← kiểm tra CSRF token cho mọi request ghi dữ liệu
     │   │   ├── CompareServlet.java
     │   │   ├── ForgotPasswordServlet.java
     │   │   ├── HomeServlet.java
@@ -59,8 +70,10 @@ DWatch/
     │   │   ├── UserServlet.java
     │   │   └── WishlistServlet.java
     │   └── util/
+    │       ├── CsrfUtil.java            ← sinh/kiểm tra CSRF token
     │       ├── DBUtil.java
     │       ├── EmailUtil.java
+    │       ├── PasswordUtil.java        ← băm & xác thực mật khẩu (BCrypt)
     │       └── VietQRUtil.java          ← tạo mã QR thanh toán (VietQR)
     └── webapp/
         ├── WEB-INF/
@@ -148,6 +161,7 @@ DWatch/
    - **`database.sql`** — tạo database `DWatchDB`, bảng, dữ liệu mẫu.
    - **`database_add_payment_method.sql`** — nếu bảng `Orders` đã tồn tại nhưng chưa có cột `PaymentMethod`, `PaymentStatus`.
    - **`database_password_reset.sql`** — tạo bảng `PasswordResetToken` (cho chức năng quên mật khẩu).
+   - **`database_password_hash.sql`** — băm mật khẩu admin seed bằng BCrypt và liệt kê các tài khoản còn lưu plaintext (xem [Bảo mật](#bảo-mật)).
 
 ### 2. Cấu hình kết nối DB và (tùy chọn) Email
 
@@ -187,10 +201,33 @@ mvn clean package
 
 ---
 
+## Bảo mật
+
+| Cơ chế | Thực hiện ở đâu |
+|--------|-----------------|
+| **Băm mật khẩu** | `util/PasswordUtil` — BCrypt cost 12. Không còn mật khẩu plaintext trong luồng đăng nhập/đăng ký/đổi mật khẩu/đặt lại mật khẩu, cho cả `Users` và `Admin`. |
+| **Tự migrate dữ liệu cũ** | `service/AuthService`, `service/AdminAuthService` — bản ghi plaintext còn sót vẫn đăng nhập được và được băm lại, ghi đè ngay trong lần đăng nhập đúng đầu tiên. |
+| **Chống CSRF** | `servlet/CsrfFilter` + `util/CsrfUtil` — synchronizer token cho mọi request POST/PUT/PATCH/DELETE; form JSP nhúng `<input type="hidden" name="_csrf">`. Cookie session dùng `SameSite=Lax` (`META-INF/context.xml`). |
+| **Chống session fixation** | Cấp session id mới (`changeSessionId`) ngay sau khi đăng nhập thành công. |
+| **Chống dò tài khoản** | Đăng nhập sai và email không tồn tại trả về cùng một thông báo; trang Quên mật khẩu luôn phản hồi giống nhau. |
+| **Chống SQL injection** | Toàn bộ truy vấn dùng `PreparedStatement`. |
+
+Sau khi deploy, **đổi ngay mật khẩu admin mặc định** (`admin` / `admin123`) — giá trị này được ghi công khai trong README nên phải coi như đã lộ.
+
 ### Lưu ý bảo mật khi commit/push:
 
 - **`.env`** đã nên có trong **`.gitignore`** → không bị push (mật khẩu DB, biến môi trường).
 - **`web.xml`** có thể chứa thông tin VietQR (số tài khoản mẫu); nếu dùng tài khoản thật, nên dùng biến môi trường hoặc file cấu hình ngoài, không commit tài khoản thật lên GitHub.
+
+---
+
+## Chạy test
+
+```bash
+mvn test
+```
+
+54 unit test (JUnit 5 + Mockito) cho `PasswordUtil`, `CsrfUtil`, `PasswordPolicy`, `AuthService`, `AdminAuthService` — chạy hoàn toàn bằng mock DAO, không cần SQL Server.
 
 ---
 
